@@ -152,3 +152,7 @@ ui:
 
   ul_show: 3
 
+# Custom CSS
+# 
+custom_css: 
+  - "css/custom.css"
