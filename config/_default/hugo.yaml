@@ -10,7 +10,7 @@
 relativeURLs: false
 
 # canonifyURLs: Convert relative URLs to absolute URLs
-canonifyURLs: true
+canonifyURLs: false
 
 # enableRobotsTXT:  Enable generation of Robots.txt file
 enableRobotsTXT: false
