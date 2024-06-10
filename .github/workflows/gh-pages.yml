@@ -118,7 +118,7 @@ jobs:
       - run: npm install --verbose
 
       - name: Build
-        run: hugo -e ${env.hugoEnvironment}
+        run: hugo -e $hugoEnvironment
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
