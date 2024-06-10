@@ -26,6 +26,11 @@ on:
     branches:
       - main  # Set a branch to deploy
 
+env:
+  # ----------------------------------------------------------------------------
+  # Specify the deployment environment:  staging or production
+  hugoEnvironment: staging
+
 jobs:
   # ----------------------------------------------------------------------------
   # Use the Zotero REST API to get the current version of the Zotero Bibliography
@@ -113,7 +118,7 @@ jobs:
       - run: npm install --verbose
 
       - name: Build
-        run: hugo -e staging
+        run: hugo -e ${env.hugoEnvironment}
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
