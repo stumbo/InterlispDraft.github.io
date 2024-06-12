@@ -152,7 +152,6 @@ ui:
 
   ul_show: 3
 
-# Custom CSS
-# 
-custom_css: 
+# Identify the custom css files
+custom_css:
   - "css/custom.css"
