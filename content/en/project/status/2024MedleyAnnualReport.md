@@ -7,7 +7,7 @@ aliases:
  - /project/news/2023medleyannualreport/
 ---
 
-{{< figure src="/Resources/logo_red_no_border_568x385.png" width="284"  height="194" alt="Some description" >}}
+{{< old2_figure src="/Resources/logo_red_no_border_568x385.png" width="284"  height="194" alt="Some description" >}}
 {{< old_figure src="Resources/logo_red_no_border_568x385.png" width="284"  height="194" alt="Some description" >}}
 
 <image src="/Resources/logo_red_no_border_568x385.png" width="284"  height="194"/>

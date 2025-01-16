@@ -11,7 +11,7 @@
     {{- end -}}
   {{- end -}}
 
-	{{- printf "Debug: src = %s" $src | safeHTML }}
+	{{- printf "Old Debug: src = %s" $src | safeHTML }}
   <img src="{{ $src }}"
     {{- if or (.Get "alt") (.Get "caption") }}
     alt="{{ with .Get "alt" }}{{ . }}{{ else }}{{ .Get "caption" | markdownify| plainify }}{{ end }}"
