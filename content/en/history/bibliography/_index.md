@@ -1,12 +1,14 @@
 ---
 title: Bibliography
 weight: 5
-# type: docs
+
+# Listing view
 view: citation
-aliases:
- - /bibliography/
- - /medley/history/publications/
- - /medley/history/publications/table/
+
+# Optional banner image (relative to `assets/media/` folder).
+banner:
+  caption: ''
+  image: ''
 
 ---
 
