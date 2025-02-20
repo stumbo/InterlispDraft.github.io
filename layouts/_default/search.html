@@ -3,39 +3,60 @@
 <div class="col-12 col-md-8 offset-md-2">
 <h2 class="ms-4">{{ .Title }}</h2>
 
-
-{{ with .Site.Params.gcs_engine_id -}}
-<!-- Widget JavaScript bundle -->
-<script src="https://cloud.google.com/ai/gen-app-builder/client?hl=en_US"></script>
-
-<!-- Search widget element is not visible by default -->
-<gen-search-widget
-  configId="a55fe89a-8293-4ede-926c-538cb302861f"
-  triggerId="searchWidgetTrigger">
-</gen-search-widget>
-
-<!-- Element that opens the widget on click. It does not have to be an input -->
-<input placeholder="Search here" id="searchWidgetTrigger" />
-
-<!-- 
-
+</div>
+<div class="col-12 col-md-8 offset-md-2">
 <script>
 (function() {
-  var genAIsearch = document.createElement('script');
-  genAIsearch.type = 'text/javascript';
-  genAIsearch.async = true;
-  genAIsearch.src = new GoogleGenerativeAI("{{ . }}");
-  genAIsearch.model = genAIsearch.getGenerativeModel({ model: "gemini-1.5-flash" });
-  var result = genAIsearch.generateContent("Explain how AI works");
-  var s = document.getElementsByTagName('script')[0];
-  s.parentNode.insertBefore(genAIsearch, s);
-console.log(result.response.text());
+  const queryText = new URLSearchParams(window.location.search).get('q')
+  const url = "https://discoveryengine.googleapis.com/v1alpha/projects/85874458559/locations/global/collections/default_collection/engines/interlisp-search_1738386288647/servingConfigs/default_search:answer";
+  const bearer = "ya29.a0AXeO80SyDRcf-XH1nUUNnoqCezd2vb_ul6hRkfmCk2Tr3zU2PpSdDH0hWeiDPcxg3TV_mFKC3Vz6cNor4iA9A20xs9m_O_mQqa3wCP3nWr3xVir5m8qQeJiLZoGGWYWiolcYkkyBSvNmY8mZnPQXFjA4g_ZheAlB4k4U3ntQcz2wSeRYaCgYKARYSARASFQHGX2MiX_YKbNGIwOUnnouKy41BgA0183"
+  const data = {
+    query: {
+      text: `${queryText}`
+    }
+  };
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${bearer}`
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    const resultDiv = document.createElement('div');
+    resultDiv.textContent = JSON.stringify(data, null, 2);
+    document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv);
+  })
+  .catch(error => {
+    console.error("Failed to fetch remote resource:", error);
+  });
 })();
 </script>
--->
-{{ end -}}
-
 <!--
+if (!window["WIZ_gab_global_data"]) {
+  window["WIZ_gab_global_data"] = {
+    'zkAi6d': 'https://cloud.google.com/ai/gen-app-builder/_/UcsWidgetUi',
+    'axVgKc': 'https:/www.gstatic.com/_/mss/boq-cloud-ai-ucs/_/js/k\x3dboq-cloud-ai-ucs.UcsWidgetUi.en_US.DX1lMoJFvVY.2021.O\/am\x3dgAE\/d\x3d1\/rs\x3dAAj4NmxHBlw81Ca5Zbk284DAgJJnyhv-3g\/m\x3dbootstrap_module,ucs_widget_module',
+    'CD1P0b': "Cv8HEg8I\/PLhFRgAOgZSVXl2UGQSDgi\/kuMVGAA6BWY2STNrEg8IqNviFRgBOgZGZ0VqZmYSDwjT6uIVGAE6BmhlUHJqYhIPCND74hUYAToGVU40STBlEg4Ikb3jFRgBOgVTRGJCVhIOCKDF4xUYADoFb2RGSVESDgia6+MVGAE6BWJSSVZEEg8ImfLjFRgAOgZqSW1UcWMSDwjl8eEVGAA6BmJ3a0NnYxIPCKX24xUYAToGVHZZclpjEg8I88ziFRgBOgZnQlNldmUSDgiDr+MVGAE6BWtkWG10Eg4Iz7XjFRgBOgVQNE9TQhIPCKb24xUYAToGa1U3a3dmEg8IzpfjFRgAOgZmS2xCY2MSDwj4+OMVGAA6Bm5CRnM5YxIPCJ+o4xUYAToGcEg1c0FlEg8IyfvjFRgAOgZRQ2FpYWQSDwitheQVGAA6BlNLeUpPZRIPCJSp4xUYAToGb1VKYjhiEg8IqP3jFRgAOgZuczEyeGISDgiO5+IVGAE6BVcwbEFqEg8IyZviFRgBOgZIMnNrNGISDgjW6eIVGAA6BUREMTlqEg8IvpLjFRgBOgZzRzJNVWQSDwj97eMVGAE6Blk3dmVGZRIPCPSy4xUYADoGeDQ3Q0xlEg4I\/ZvjFRgBOgVjT2Y4cRIPCJeN4xUYADoGbEh6TGplEg8IgonjFRgBOgZQdjZkRWQSDgj7weMVGAE6BUZnQlc2Eg8IpfziFRgBOgZ1ZXNjS2ISDgjnuOMVGAE6BWxmbE1vEg8IlN7jFRgAOgZwTmRjTmQSDwiqpeMVGAE6BmNMdFBOYhIPCJKc4xUYAToGR25oVXZjEg8IwYfkFRgAOgZIUDRnYmQSDwjHoeIVGAE6BlpMajBnZhIOCJe+4hUYAToFeWRKNWYSDwiTnOIVGAA6BmZtVURWZRIPCIrc4xUYAToGWGxTQkViEg8I5\/PiFRgAOgZNUzFmemMSDwim8+AVGAE6BnI2RW44YxIPCMr34xUYADoGU1VXbVNiEg8Ist3jFRgAOgZ0bnZhemMSDwjI7+IVGAE6BmEwOWtkZRIPCISL5BUYADoGSVY2dmliEg8IuNHiFRgBOgZOTmUxZGQSDwiWsOIVGAE6BmZpWHJYZBIOCIvf4xUYAToFdTRVdjASDwj7kuIVGAE6Bm9SMmVxZhIPCJjU4hUYAToGemFLWmZkEg8I2vbjFRgAOgZUdDNzQWUSDwi\/wuMVGAA6BnhiUFZJYxIPCMGt4xUYADoGa2E5QkhjEg8IreDiFRgBOgZldzZlNWISDwjRq+IVGAE6BmVxSTd5ZBIPCPTM4hUYADoGelh2ZmdiEg8IyaLiFRgBOgZHT0RDeWYaDggDEgodD7XduSkWnK0Q",
+  }; 
+    const s = document.createElement("script"); 
+    s.src = "https:\/\/www.gstatic.com\/_\/mss\/boq-cloud-ai-ucs\/_\/js\/k\x3dboq-cloud-ai-ucs.UcsWidgetUi.en_US.DX1lMoJFvVY.2021.O\/am\x3dgAE\/d\x3d1\/rs\x3dAAj4NmxHBlw81Ca5Zbk284DAgJJnyhv-3g\/m\x3dbootstrap_module,ucs_widget_module";
+    s.async = true; 
+    s.crossorigin = "anonymous"; 
+    document.head.appendChild(s);} 
+
+-->
+<!-- 
+curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+-H "Content-Type: application/json" \
+"https://discoveryengine.googleapis.com/v1alpha/projects/85874458559/locations/global/collections/default_collection/engines/interlisp-search_1738386288647/servingConfigs/default_search:search" \
+-d '{"query":"<QUERY>","pageSize":10,"spellCorrectionSpec":{"mode":"AUTO"},"contentSearchSpec":{"snippetSpec":{"returnSnippet":true}}}'
+-->
+
+{{ with .Site.Params.gcs_engine_id -}}
 <script>
 (function() {
 var cx = '{{ . }}';
@@ -47,9 +68,10 @@ var s = document.getElementsByTagName('script')[0];
 s.parentNode.insertBefore(gcse, s);
 })();
 </script>
+{{ end -}}
 
 <gcse:searchresults-only></gcse:searchresults-only>
-{{ end -}}
 <!-- End Google Custom Search Engine-->
 </div>
 </section>
+{{ end }}
