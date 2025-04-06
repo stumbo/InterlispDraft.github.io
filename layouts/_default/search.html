@@ -36,7 +36,7 @@
     .then(data => {
       console.log("debug info fetch 66", data);
       const resultDiv2 = document.createElement('div');
-      resultDiv2.innerHTML = marked.parse(data.answer.answerText); // Use a Markdown parser like "marked" to render Markdown as HTML
+      resultDiv2.innerHTML = marked.parse(data.results); // Use a Markdown parser like "marked" to render Markdown as HTML
       document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv2);
     })
 /* 
