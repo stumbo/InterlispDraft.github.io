@@ -1,4 +1,5 @@
 {{ define "main" -}}
+<script src="{{ "js/marked.min.js" | relURL }}"></script>
 <section class="row td-search-result">
 <div class="col-12 col-md-8 offset-md-2">
 <h2 class="ms-4">{{ .Title }}</h2>
@@ -8,12 +9,52 @@
 <script>
 (function() {
   const queryText = new URLSearchParams(window.location.search).get('q')
-  const url = "https://discoveryengine.googleapis.com/v1alpha/projects/85874458559/locations/global/collections/default_collection/engines/interlisp-search_1738386288647/servingConfigs/default_search:answer";
-  const bearer = "ya29.a0AXeO80SyDRcf-XH1nUUNnoqCezd2vb_ul6hRkfmCk2Tr3zU2PpSdDH0hWeiDPcxg3TV_mFKC3Vz6cNor4iA9A20xs9m_O_mQqa3wCP3nWr3xVir5m8qQeJiLZoGGWYWiolcYkkyBSvNmY8mZnPQXFjA4g_ZheAlB4k4U3ntQcz2wSeRYaCgYKARYSARASFQHGX2MiX_YKbNGIwOUnnouKy41BgA0183"
+  const url = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:searchLite?key=AIzaSyA_bFZHph5ZXN8EtXTRaQa2zi6Sh70e_zU";
   const data = {
-    query: {
-      text: `${queryText}`
-    }
+    query: `${queryText}`,
+    pageSize: 20,
+    session: "projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/sessions/-",
+    spellCorrectionSpec: {
+      mode: "AUTO"
+    },
+    languageCode: "en-US",
+    contentSearchSpec: {
+     snippetSpec: {
+       returnSnippet: true
+     }
+    } 
+  };
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+    .then(data => {
+      console.log("debug info fetch 66", data);
+      const resultDiv2 = document.createElement('div');
+      resultDiv2.innerHTML = marked.parse(data.answer.answerText); // Use a Markdown parser like "marked" to render Markdown as HTML
+      document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv2);
+    })
+/* 
+This method requires Oauth2 authentication and a valid bearer token.
+const url = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:search";
+  const bearer = "ya29.a0AZYkNZjwU1i01Y9FG5PK1G-3W9OlUGIpbqN87t35wfNBwNRILQIsXdxT34ABzJDpaWsnhsUiImHR5smDsxxgdYcX0x6e07KjoqDic0XVhzE6_dflLQ0p84-_BKYA2latAOTGhDvVHYKGY_sa5taCIEndv6yGIcHwOKX977TiZQyzfL4aCgYKAZcSARESFQHGX2MitMARmJuZ1CbwkvQbfN151w0182";
+  const data = {
+    query: `${queryText}`,
+    pageSize: 10,
+    session: "projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/sessions/-",
+    spellCorrectionSpec: {
+      mode: "AUTO"
+    },
+    languageCode: "en-US",
+    contentSearchSpec: {
+     snippetSpec: {
+       returnSnippet: true
+     }
+    } 
   };
 
   fetch(url, {
@@ -26,10 +67,52 @@
   })
   .then(response => response.json())
   .then(data => {
+    console.log("debug info fetch 28", data);
     const resultDiv = document.createElement('div');
-    resultDiv.textContent = JSON.stringify(data, null, 2);
-    document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv);
-  })
+ //   resultDiv.textContent = JSON.stringify(data, null, 2);
+ //   document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv);
+    const resultsCall1 = data; // Define resultsCall1 here
+    const url2 = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:answer";
+    const data2 = {
+      query : {
+        text: `${queryText}`,
+        queryId: `${resultsCall1.sessionInfo.queryId}` // Fix typo here
+      },
+      session: `${resultsCall1.sessionInfo.name}`,
+      relatedQuestionsSpec: {
+        enable: true
+      },
+      answerGenerationSpec: {
+        ignoreAdversarialQuery: false,
+        ignoreNonAnswerSeekingQuery: false,
+        ignoreLowRelevantContent: true,
+        multimodalSpec: {},
+        includeCitations: true,
+        promptSpec: {
+            preamble: "You are a researcher with experience in computer science and the evolution of programming languages.  Answers should be targeted for like-minded individuals.  Technical details are good, especially when they are appropriately attributed."
+        },
+        modelSpec: {
+            modelVersion: "stable"
+        }
+      }
+    };
+    console.log("debug POST 2 body: ", data2);
+    fetch(url2, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${bearer}`
+      },
+      body: JSON.stringify(data2)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("debug info fetch 66", data);
+      const resultDiv2 = document.createElement('div');
+      resultDiv2.innerHTML = marked.parse(data.answer.answerText); // Use a Markdown parser like "marked" to render Markdown as HTML
+      document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv2);
+    })
+  }) */
   .catch(error => {
     console.error("Failed to fetch remote resource:", error);
   });
