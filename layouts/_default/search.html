@@ -1,0 +1,160 @@
+{{ define "main" -}}
+<script src="{{ "js/marked.min.js" | relURL }}"></script>
+<section class="row td-search-result">
+<div class="col-12 col-md-8 offset-md-2">
+<h2 class="ms-4">{{ .Title }}</h2>
+
+</div>
+<div class="col-12 col-md-8 offset-md-2">
+<script>
+(function() {
+  const queryText = new URLSearchParams(window.location.search).get('q')
+  const url = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:searchLite?key=AIzaSyA_bFZHph5ZXN8EtXTRaQa2zi6Sh70e_zU";
+  const data = {
+    query: `${queryText}`,
+    pageSize: 20,
+    session: "projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/sessions/-",
+    spellCorrectionSpec: {
+      mode: "AUTO"
+    },
+    languageCode: "en-US",
+    contentSearchSpec: {
+     snippetSpec: {
+       returnSnippet: true
+     }
+    } 
+  };
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+    .then(data => {
+      console.log("debug info fetch 66", data);
+      const resultDiv2 = document.createElement('div');
+      resultDiv2.innerHTML = marked.parse(data.answer.answerText); // Use a Markdown parser like "marked" to render Markdown as HTML
+      document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv2);
+    })
+/* 
+This method requires Oauth2 authentication and a valid bearer token.
+const url = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:search";
+  const bearer = "ya29.a0AZYkNZjwU1i01Y9FG5PK1G-3W9OlUGIpbqN87t35wfNBwNRILQIsXdxT34ABzJDpaWsnhsUiImHR5smDsxxgdYcX0x6e07KjoqDic0XVhzE6_dflLQ0p84-_BKYA2latAOTGhDvVHYKGY_sa5taCIEndv6yGIcHwOKX977TiZQyzfL4aCgYKAZcSARESFQHGX2MitMARmJuZ1CbwkvQbfN151w0182";
+  const data = {
+    query: `${queryText}`,
+    pageSize: 10,
+    session: "projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/sessions/-",
+    spellCorrectionSpec: {
+      mode: "AUTO"
+    },
+    languageCode: "en-US",
+    contentSearchSpec: {
+     snippetSpec: {
+       returnSnippet: true
+     }
+    } 
+  };
+
+  fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${bearer}`
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log("debug info fetch 28", data);
+    const resultDiv = document.createElement('div');
+ //   resultDiv.textContent = JSON.stringify(data, null, 2);
+ //   document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv);
+    const resultsCall1 = data; // Define resultsCall1 here
+    const url2 = "https://discoveryengine.googleapis.com/v1alpha/projects/191169864763/locations/global/collections/default_collection/engines/interlisp-search_1741738278473/servingConfigs/default_search:answer";
+    const data2 = {
+      query : {
+        text: `${queryText}`,
+        queryId: `${resultsCall1.sessionInfo.queryId}` // Fix typo here
+      },
+      session: `${resultsCall1.sessionInfo.name}`,
+      relatedQuestionsSpec: {
+        enable: true
+      },
+      answerGenerationSpec: {
+        ignoreAdversarialQuery: false,
+        ignoreNonAnswerSeekingQuery: false,
+        ignoreLowRelevantContent: true,
+        multimodalSpec: {},
+        includeCitations: true,
+        promptSpec: {
+            preamble: "You are a researcher with experience in computer science and the evolution of programming languages.  Answers should be targeted for like-minded individuals.  Technical details are good, especially when they are appropriately attributed."
+        },
+        modelSpec: {
+            modelVersion: "stable"
+        }
+      }
+    };
+    console.log("debug POST 2 body: ", data2);
+    fetch(url2, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${bearer}`
+      },
+      body: JSON.stringify(data2)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("debug info fetch 66", data);
+      const resultDiv2 = document.createElement('div');
+      resultDiv2.innerHTML = marked.parse(data.answer.answerText); // Use a Markdown parser like "marked" to render Markdown as HTML
+      document.querySelector('.col-12.col-md-8.offset-md-2').appendChild(resultDiv2);
+    })
+  }) */
+  .catch(error => {
+    console.error("Failed to fetch remote resource:", error);
+  });
+})();
+</script>
+<!--
+if (!window["WIZ_gab_global_data"]) {
+  window["WIZ_gab_global_data"] = {
+    'zkAi6d': 'https://cloud.google.com/ai/gen-app-builder/_/UcsWidgetUi',
+    'axVgKc': 'https:/www.gstatic.com/_/mss/boq-cloud-ai-ucs/_/js/k\x3dboq-cloud-ai-ucs.UcsWidgetUi.en_US.DX1lMoJFvVY.2021.O\/am\x3dgAE\/d\x3d1\/rs\x3dAAj4NmxHBlw81Ca5Zbk284DAgJJnyhv-3g\/m\x3dbootstrap_module,ucs_widget_module',
+    'CD1P0b': "Cv8HEg8I\/PLhFRgAOgZSVXl2UGQSDgi\/kuMVGAA6BWY2STNrEg8IqNviFRgBOgZGZ0VqZmYSDwjT6uIVGAE6BmhlUHJqYhIPCND74hUYAToGVU40STBlEg4Ikb3jFRgBOgVTRGJCVhIOCKDF4xUYADoFb2RGSVESDgia6+MVGAE6BWJSSVZEEg8ImfLjFRgAOgZqSW1UcWMSDwjl8eEVGAA6BmJ3a0NnYxIPCKX24xUYAToGVHZZclpjEg8I88ziFRgBOgZnQlNldmUSDgiDr+MVGAE6BWtkWG10Eg4Iz7XjFRgBOgVQNE9TQhIPCKb24xUYAToGa1U3a3dmEg8IzpfjFRgAOgZmS2xCY2MSDwj4+OMVGAA6Bm5CRnM5YxIPCJ+o4xUYAToGcEg1c0FlEg8IyfvjFRgAOgZRQ2FpYWQSDwitheQVGAA6BlNLeUpPZRIPCJSp4xUYAToGb1VKYjhiEg8IqP3jFRgAOgZuczEyeGISDgiO5+IVGAE6BVcwbEFqEg8IyZviFRgBOgZIMnNrNGISDgjW6eIVGAA6BUREMTlqEg8IvpLjFRgBOgZzRzJNVWQSDwj97eMVGAE6Blk3dmVGZRIPCPSy4xUYADoGeDQ3Q0xlEg4I\/ZvjFRgBOgVjT2Y4cRIPCJeN4xUYADoGbEh6TGplEg8IgonjFRgBOgZQdjZkRWQSDgj7weMVGAE6BUZnQlc2Eg8IpfziFRgBOgZ1ZXNjS2ISDgjnuOMVGAE6BWxmbE1vEg8IlN7jFRgAOgZwTmRjTmQSDwiqpeMVGAE6BmNMdFBOYhIPCJKc4xUYAToGR25oVXZjEg8IwYfkFRgAOgZIUDRnYmQSDwjHoeIVGAE6BlpMajBnZhIOCJe+4hUYAToFeWRKNWYSDwiTnOIVGAA6BmZtVURWZRIPCIrc4xUYAToGWGxTQkViEg8I5\/PiFRgAOgZNUzFmemMSDwim8+AVGAE6BnI2RW44YxIPCMr34xUYADoGU1VXbVNiEg8Ist3jFRgAOgZ0bnZhemMSDwjI7+IVGAE6BmEwOWtkZRIPCISL5BUYADoGSVY2dmliEg8IuNHiFRgBOgZOTmUxZGQSDwiWsOIVGAE6BmZpWHJYZBIOCIvf4xUYAToFdTRVdjASDwj7kuIVGAE6Bm9SMmVxZhIPCJjU4hUYAToGemFLWmZkEg8I2vbjFRgAOgZUdDNzQWUSDwi\/wuMVGAA6BnhiUFZJYxIPCMGt4xUYADoGa2E5QkhjEg8IreDiFRgBOgZldzZlNWISDwjRq+IVGAE6BmVxSTd5ZBIPCPTM4hUYADoGelh2ZmdiEg8IyaLiFRgBOgZHT0RDeWYaDggDEgodD7XduSkWnK0Q",
+  }; 
+    const s = document.createElement("script"); 
+    s.src = "https:\/\/www.gstatic.com\/_\/mss\/boq-cloud-ai-ucs\/_\/js\/k\x3dboq-cloud-ai-ucs.UcsWidgetUi.en_US.DX1lMoJFvVY.2021.O\/am\x3dgAE\/d\x3d1\/rs\x3dAAj4NmxHBlw81Ca5Zbk284DAgJJnyhv-3g\/m\x3dbootstrap_module,ucs_widget_module";
+    s.async = true; 
+    s.crossorigin = "anonymous"; 
+    document.head.appendChild(s);} 
+
+-->
+<!-- 
+curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+-H "Content-Type: application/json" \
+"https://discoveryengine.googleapis.com/v1alpha/projects/85874458559/locations/global/collections/default_collection/engines/interlisp-search_1738386288647/servingConfigs/default_search:search" \
+-d '{"query":"<QUERY>","pageSize":10,"spellCorrectionSpec":{"mode":"AUTO"},"contentSearchSpec":{"snippetSpec":{"returnSnippet":true}}}'
+-->
+
+{{ with .Site.Params.gcs_engine_id -}}
+<script>
+(function() {
+var cx = '{{ . }}';
+var gcse = document.createElement('script');
+gcse.type = 'text/javascript';
+gcse.async = true;
+gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+var s = document.getElementsByTagName('script')[0];
+s.parentNode.insertBefore(gcse, s);
+})();
+</script>
+{{ end -}}
+
+<gcse:searchresults-only></gcse:searchresults-only>
+<!-- End Google Custom Search Engine-->
+</div>
+</section>
+{{ end }}
