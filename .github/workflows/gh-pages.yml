@@ -134,7 +134,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
       
       - run: npm install -g autoprefixer --save-dev  
       - run: npm install -g postcss-cli --save-dev
