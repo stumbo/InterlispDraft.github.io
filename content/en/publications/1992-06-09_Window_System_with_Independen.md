@@ -1,0 +1,8 @@
+---
+title: "Window System with Independently Replaceable Window Functionality"
+date: '1992-06-09'
+authors: 
+    - Ramana B. Rao
+abstract: "A workspace data structure, such as a window hierarchy or network, includes functional data units that include data relating to workspace functionality. These functional data units are associated with data units corresponding to the workspaces such that a functional data unit can be replaced by a functional data unit compatible with a different set of functions without modifying the structure of other data units. Each workspace data unit may have a replaceably associated functional data unit called an input contract relating to its input functions and another called an output contract relating to its output functions. A parent workspace's data unit and the data units of its children may together have a replaceably associated functional data unit, called a windowing contract, relating to the windowing relationship between the parent and the children. The data structure may also include an auxiliary data unit associated between the data units of the parent and children windows, and the windowing contract may be associated with the auxiliary data unit. The contracts can be accessed and replaced by a processor in a system that includes the data structure. The contracts can be instances of classes in an object-oriented programming language, and can be replaceably associated by pointers associated with the system objects. Alternatively, a contract can be replaceably associated through dynamic multiple inheritance, with the superclasses of each workspace class including one or more contract classes such that changing the class of an instance of a workspace class serves to replace the contract."
+---
+
