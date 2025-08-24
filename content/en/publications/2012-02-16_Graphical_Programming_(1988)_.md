@@ -1,0 +1,8 @@
+---
+title: "Graphical _Programming_ (1988) - _Parts_ 1 and 2"
+date: '2012-02-16'
+authors: 
+    - NA
+abstract: "This video (in 3 pieces) describes the use of graphical programming with an example, showing the encapsulation of several steps of an analysis into a single reusable tool.   An INTERLISP-D programming environment with the object oriented system LOOPS is used for software development. Work is on a Xerox Lisp Workstation  (Xerox 1186).    Second of 3 pieces of a single video.    First piece: Graphical Programming (1988) - Part 0  Contains:  'Opening'    -  Introduction by Wayne Oldford    (refers to earlier video called 'Data Analysis Networks  in DINDE')   'Part 0 Statistical Analysis Maps'  - review of the interactive data analysis network representation   of a statistical analysis.    Second piece:  Graphical Programming (1988) - Parts 1 and 2  Contains:  'Part 1   Toolboxes'    -  Review of the elements of a statistical toolbox in DINDE   'Part 2 The Analysis Path'  - Demonstrates exploration of a path in an existing  analysis map and its representation as a pattern,  It is shown how to capture this pattern in DINDE as a new  new program represented as an 'AnalysisPath' object..  This is what is meant by  'graphical programming'.      Third piece: 'Graphical Programming (1988) - Part 3'  Contains:  'Part 3   Graphical Programming  Example: Added Variable Plots'    - Demonstrates graphical programming by constructing an added variable plot.  This is done by constructing the appropriate analysis path on some data, capturing the pattern adding it to the toolbox and then applying it to new data."
+---
+
