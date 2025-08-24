@@ -1,0 +1,8 @@
+---
+title: "Dipmeter _Advisor_"
+date: '2999-01-01'
+authors: 
+    - NA
+abstract: "The Dipmeter Advisor was an early expert system developed in the 1980s by Schlumberger  with the help of artificial-intelligence workers at MIT to aid in the analysis of data gathered during oil exploration. The Advisor was generally not merely an inference engine and a knowledge base of textasciitilde 90 rules, but generally was a full-fledged workstation, running on one of Xerox's 1100 Dolphin Lisp machines (or in general on Xerox's '1100 Series Scientific Information Processors' line) and written in INTERLISP-D, with a pattern recognition layer which in turn fed a GUI menu-driven interface. It was developed by a number of people, including Reid G. Smith, James D. Baker, and Robert L. Young.It was primarily influential not because of any great technical leaps, but rather because it was so successful for Schlumberger's oil divisions and because it was one of the few success stories of the AI bubble to receive wide publicity before the AI winter. The AI rules of the Dipmeter Advisor were primarily derived from Al Gilreath, a Schlumberger interpretation engineer who developed the 'red, green, blue' pattern method of dipmeter interpretation. Unfortunately this method had limited application in more complex geological environments outside the Gulf Coast, and the Dipmeter Advisor was primarily used within Schlumberger as a graphical display tool to assist interpretation by trained geoscientists, rather than as an AI tool for use by novice interpreters. However, the tool pioneered a new approach to workstation-assisted graphical interpretation of geological information."
+---
+
