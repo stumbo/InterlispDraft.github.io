@@ -12,7 +12,7 @@ my $target = $1;
 if ($key eq $target) {  # only top level entries
   my $handle = undef;
   my $itemjson = "$bibItemsDir/$key.json";
-  open($handle, ">", $itemjson) || die "$0: cannot open $itemjson in write-open mode: $!";
+  open($handle, ">", $itemjson) || die "$0: cannot open $itemjson in write-open mode: $! (cwd: " . Cwd::getcwd() . ")";
   print $handle $item;
   close $handle || die "$0: close of file $itemjson failed: $!";
   
