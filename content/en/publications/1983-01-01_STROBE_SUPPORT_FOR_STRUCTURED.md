@@ -1,8 +1,0 @@
----
-title: "_STROBE_: _SUPPORT FOR STRUCTURED OBJECT KNOWLEDGE REPRESENTATION_"
-date: '1983-01-01'
-authors: 
-    - Reid G Smith
-abstract: "STROBE is a system that provides object-oriented programming support tools for INTERLISP. It offers a primitive foundation with which more complex structured object representation schemes can be constructed. STROBE implements multiple resident knowledge bases, tangled generalization hierarchies, flexible inheritance of properties, procedural attachment, and event-sensitive procedure invocation."
----
-

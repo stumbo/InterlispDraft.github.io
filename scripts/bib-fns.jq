@@ -12,6 +12,46 @@ def unwrapDiv:
 def moveURL_to_url:
   select(nonBlankKey("URL")) | (setpath(["url"]; .URL) | del(.URL)) // .;
 
+def raise_issued_date_parts:
+  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then setpath(["issuedDateParts"]; .issued."date-parts"[0]) else . end;
+
+def pad2: tostring | if length==1 then "0"+. else . end;
+
+def issued_iso_string:
+  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then 
+    setpath(["isoDateString"]; 
+    (.issued["date-parts"][0]) as $p | ($p[0]|tostring) + "-" + (($p[1]? // 1)|pad2) + "-" + (($p[2]? // 1)|pad2))
+  else 
+    . 
+  end;
+
+# Build "Family, Given; Family2, Given2" string from .author array.
+# Falls back to other common shapes (name / firstName+lastName). Skips empty parts.
+def author_string:
+  ( .author // [] )                                     # if no authors → empty array
+  | map(
+      if (has("family") and .family != null and (.family|tostring|length)>0) then
+        .family
+        + ( if (has("given") and .given != null and (.given|tostring|length)>0)
+            then ", " + (.given|tostring)
+            else "" end )
+      elif (has("lastName") and .lastName != null) then
+        .lastName
+        + ( if (has("firstName") and .firstName != null and (.firstName|tostring|length)>0)
+            then ", " + (.firstName|tostring)
+            else "" end )
+      elif (has("name") and .name != null) then
+        .name
+      else
+        empty
+      end
+    )
+  | join("; ");
+
+# If you want the field added into each item:
+def add_author_string:
+  . + { authorsFormatted: (author_string) };
+
 def make_DOI_to_url($doi):
   if ($doi | startswith("https:")) then $doi else "https://doi.org/" + ($doi | ltrimstr("/")) end ;
 
@@ -90,3 +130,7 @@ def semiflatten:  # assumes that only one item is the input
      + ($innerKeys | map(. as $iKey | {"key": $iKey, "value": ($inner | getpath([$iKey]))})) )
   | from_entries;
     
+def bibItem:  # assumes that only one item is the input
+    . as $item
+  | (keys - ["key","title","target"]) as $tailKeys
+  | {"key": .key, "title": .title, "target": .target } + ($tailKeys | map(. as $tKey | {"key": $tKey, "value": ($item | getpath([$tKey]))}) | from_entries);

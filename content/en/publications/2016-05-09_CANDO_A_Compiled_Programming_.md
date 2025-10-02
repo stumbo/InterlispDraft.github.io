@@ -1,8 +1,0 @@
----
-title: "_CANDO_: _A Compiled Programming Language_ for _Computer-Aided Nanomaterial Design_ and _Optimization Based_ on _Clasp Common Lisp_"
-date: '2016-05-09'
-authors: 
-    - Christian E. Schafmeister
-abstract: "CANDO is a compiled programming language designed for rapid prototyping and design of macromolecules and nanometer-scale materials. CANDO provides functionality to write programs that assemble atoms and residues into new molecules and construct three-dimensional coordinates for them. CANDO also provides functionality for searching molecules for substructures, automatically assigning atom types, identifying rings, carrying out conformational searching, and automatically determining stereochemistry, among other things. CANDO extends the Clasp implementation of the dynamic language Common Lisp. CANDO provides classes for representing atoms, residues, molecules and aggregates (collections of molecules) as primitive objects that are implemented in C++ and subject to automatic memory management, like every other object within the language. CANDO inherits all of the capabilities of Clasp, including the easy incorporation of C++ libraries using a C++ template programming library. This automatically builds wrap- per code to expose the C++ functionality to the CANDO Common Lisp environment and the use of the LLVM library[1] to generate fast native code. A version of CANDO can be built that incorporates the Open Message Passing Interface C++ library[2], which allows CANDO to be run on supercomputers, in order to automatically setup, start, and analyze molecular mechanics simulations on large parallel computers. CANDO is currently available under the LGPL 2.0 license."
----
-

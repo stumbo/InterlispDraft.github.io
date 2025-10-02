@@ -1,8 +1,0 @@
----
-title: "Oral History Interview with _Stuart Card_"
-date: '2020-02-17'
-authors: 
-    - Stuart Card
-abstract: "This interview is part of a series on Human Computer Interaction (HCI) conducted by the Charles Babbage Institute for ACM SIGCHI (Association for Computing Machinery Special Interest Group for Computer Human Interaction).  HCI Pioneer Stuart Card discusses early education, attending Oberlin College, and helping lead its computer center, before the bulk of the interview focuses on his graduate education at Carnegie Mellon University working under Allen Newell, and his long and influential tenure at Xerox PARC.  This includes his long and impactful collaboration with Newell and fellow Newell doctoral student Tom Moran. Newell, Card, and Moran were fundamentally important to theorizing early Human Computer Interaction, and the three co-wrote the widely used and deeply insightful textbook, The Psychology of Human Computer Interaction.  Card provides an overview of his decades of work of Xerox PARC and various aspects of his research contributions to HCI models, information visualization, and information access (especially foraging theory). He moved into managing research and also relates a portion of his leadership roles at PARC and outside on important committees such as for the National Academy of Science.  He briefly expresses his ideas on the early institutional history of SIGCHI and its evolution.  Regarding his work at PARC, Card discusses his influential work on computer mice research at greater length.  Card became an adjunct professor at Stanford University. He is an ACM Fellow and was awarded SIGCHI’s Lifetime Research Achievement Award."
----
-
