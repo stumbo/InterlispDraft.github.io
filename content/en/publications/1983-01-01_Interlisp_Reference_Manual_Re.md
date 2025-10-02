@@ -1,8 +1,0 @@
----
-title: "Interlisp Reference Manual: _Revised_"
-date: '1983-01-01'
-authors: 
-    - Michael Sannella
-abstract: "Interlisp is a programming system. A programming system consists of a programming language, a large number of predefined programs (or functions, to use the Lisp tenninology) that can be used either as direct user commands or as subroutines in user programs, and an environment that supports the programmer by providing a variety of specialized programming tools. The language and predefined functions of Interlisp are rich, but similar to those of other modem programming languages. The Interlisp programming environment, on the other hand, is very distinctive. Its most salient characteristic is an integrated set of programming tools which know enough about Interlisp programming so that they can act as semi-autonomous, intelligent 'assistants' to the programmer. In addition, the environment provides a completely self-contained world for creating, debugging and maintaining Interlisp programs.  This manual describes all three components of the Interlisp system. There are discussions about the content and structure of the language, about the pieces of the system that can be incorporated into user programs, and about the environment. The line between user code and the environment is thin and changing. Most users extend the environment with some special features of their own. Because Interlisp is so easily extended, the system has grown over time to incorporate many different ideas about effective and useful ways to program. This gradual accumulation over many years has resulted in a rich and diverse system."
----
-
