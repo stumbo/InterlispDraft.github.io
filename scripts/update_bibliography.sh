@@ -301,6 +301,10 @@ BIBLIOGRAPHY_DIR="./../content/en/history/bibliography"
 export BIBLIOGRAPHY_DIR
 BIBITEMS_DIR="./../static/data/bibItems"
 export BIBITEMS_DIR
+
+# Ensure target directories exist
+mkdir -p "$BIBLIOGRAPHY_DIR" "$BIBITEMS_DIR"
+
 ./bibSplit.pl bibliography-items-by-line.json
 # Cleanup (uncomment once working)
 # rm bibliography-items-by-line.json
