@@ -6,7 +6,6 @@ cascade:
 weight: 5
 aliases:
  - /bibliography/
-
 ---
 
 # Interlisp Bibliography
