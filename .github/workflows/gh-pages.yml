@@ -70,7 +70,7 @@ jobs:
         id: cache-zotero
         uses: actions/cache@v4
         with:
-          path: ~/.zotero_bib_cache
+          path: .zotero_bib_cache
           key: zotero-${{ fromJson(steps.zoteroVersion.outputs.headers).last-modified-version }}
 
   # ----------------------------------------------------------------------------
