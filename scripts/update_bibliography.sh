@@ -297,9 +297,9 @@ if $debugFiles ; then
 fi
 
 showInfo 1 "Generating individual Bibliography entries' .md files"
-BIBLIOGRAPHY_DIR="$(dirname "$0")/../content/en/history/bibliography"
+BIBLIOGRAPHY_DIR="../content/en/history/bibliography"
 export BIBLIOGRAPHY_DIR
-BIBITEMS_DIR="$(dirname "$0")/../static/data/bibItems"
+BIBITEMS_DIR="../static/data/bibItems"
 export BIBITEMS_DIR
 ./bibSplit.pl bibliography-items-by-line.json
 # Cleanup (uncomment once working)
