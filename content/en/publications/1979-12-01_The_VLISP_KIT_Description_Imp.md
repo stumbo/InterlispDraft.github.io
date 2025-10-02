@@ -1,8 +1,0 @@
----
-title: "The _VLISP KIT_: Description Implementation and Evaluation"
-date: '1979-12-01'
-authors: 
-    - Jerome Chailloux
-abstract: "This study presents the realization of three systems VLISP (a dialect of LISP) developped at the University of Paris 8 - Vincennes, on the following machines: - a 8 bit words micro-processor (Intel8080/Zilog80) - a 16 bit words PDP-11 - a 36 bit words PDP-10 From these realizations is extracted an implementation model. Our study proposes a solution to the problems of construction and evaluation of such a system. These problems are : 1) The exhaustive description of the implementation. We propose a description based on the virtual, referential and prototype machine VCMC2. 2) The adequate representations of the VLISP objects and functions. We have associated some natural properties and we have established a functionnal typology. 3) The efficiency of the interpreter (in words of core, execution time and power). Our iterpreter does, for his own need, a optimal core allocation (in term of CONS module calls). The direct acces (which needs only one memory access) to the values of objects variable and function, and a type classification of functions allow a direct invocation of all typed functions. 4) The power of control structures. Our implementation's KIT generalizes the VLISP control structures SELF an ESCAPE, extends them with the new constructions EXIT, WHERE and LETF and unifies completly their description and implementation. An incarnation of our model is given by the realization of a complete VLISP system in the referential machine VCMC2. The full code is given in appendix."
----
-
