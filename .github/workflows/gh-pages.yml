@@ -70,8 +70,6 @@ jobs:
         id: cache-zotero
         uses: actions/cache/restore@v4
         with:
-          path: .zotero_bib_cache
-          key: zotero-${{ fromJson(steps.zoteroVersion.outputs.headers).last-modified-version }}
           lookup-only: true
           path: |
             static/data/bibliography.json
