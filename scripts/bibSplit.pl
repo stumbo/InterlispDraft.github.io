@@ -57,6 +57,7 @@ abstract: $itemAbstract
 abstract_short:
 tags:
 url_source:
+zotero_url: "https://www.zotero.org/groups/2914042/items/$key"
 ---
 
 {{< bibItem key="$key" >}}
