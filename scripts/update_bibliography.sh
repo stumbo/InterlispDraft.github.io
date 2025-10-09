@@ -12,15 +12,15 @@ collectionFiles=false
 
 # removeChildrenFromFinalFile=false
 
-showInfoLevel=2
+showInfoLevel=2     
 #  0: NO showInfo messages.
 #  1: high level general info messages.
 #  2: warning-type messages.
-#  3:
-#  4:
+#  3: 
+#  4: 
 #  5: detailed general info messages.
-#  6:
-#  7:
+#  6: 
+#  7: 
 #  8: individual processing steps (most of which may generate a debug File -- see $debugFiles)
 #  9: very detailed general info messages.
 # 10: extremely detailed messages (e.g., calls to curl, etc.)
@@ -305,7 +305,7 @@ export BIBITEMS_DIR
 # Ensure target directories exist
 mkdir -p "$BIBLIOGRAPHY_DIR" "$BIBITEMS_DIR"
 
-./bibSplit.pl bibliography-items-by-line.json
+./bibSplit.pl bibliography-items-by-line.json 2>bibSplit.err
 # Cleanup (uncomment once working)
 # rm bibliography-items-by-line.json
 
