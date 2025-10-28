@@ -101,11 +101,16 @@ jobs:
             content/en/history/bibliography
           key: bib-${{ needs.check.outputs.zoteroVersion }}
 
+      - name: Install Perl Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y perl libwww-perl
+
       - name: Install Bibliography
         if: steps.cache-bib.outputs.cache-hit != 'true'
         run: |
-            echo "Retrieve bibliography"
-            cd scripts
+          echo "Retrieve bibliography"
+          cd scripts
             chmod +x ./update_bibliography.sh
             chmod +x ./bibSplit.pl
             ./update_bibliography.sh
