@@ -62,35 +62,16 @@
       {{- $rendered = $rendered | htmlEscape -}}
       <a href="{{ .RelPermalink }}"><span><strong>{{- $rendered | safeHTML -}}</strong></span></a><br>
 
-      {{- /* Safe date: use front matter date only if non-empty & matches basic pattern */ -}}
-            {{- $authors := .Params.authors -}}
-      {{- $editors := .Params.editors -}}
-      {{- $isPatent := eq .Params.item_type "patent" -}}
-      {{- /* warnf "authors: %v" $authors */ -}}
-      {{- if or $authors $editors -}}
-        {{- if $authors -}}
-          {{- if reflect.IsSlice $authors -}}
-            {{- if $isPatent }}
-              Inventors: 
-            {{ end }}
-              {{ delimit $authors "; " "; and " }}
-          {{- else -}}
-            {{- if $isPatent }}
-              Inventor: 
-            {{ end }}
-              {{ $authors }}
-          {{- end -}}
+      {{- $authors := .Params.authors -}}
+      {{- if $authors -}}
+        {{- if reflect.IsSlice $authors -}}
+          {{ delimit $authors "; " " and " }}<br>
         {{- else -}}
-          Edited by: 
-          {{ if reflect.IsSlice $editors -}}
-             {{ delimit $editors "; " "; and " }}
-          {{- else -}}
-              {{ $editors }}
-          {{- end -}}
+          {{ $authors }}<br>
         {{- end -}}
-      <br>
       {{- end -}}
 
+      {{- /* Safe date: use front matter date only if non-empty & matches basic pattern */ -}}
       {{- $d := .Date -}}
       {{- with .Params.date -}}
         {{- $datestr := trim . " " -}}
