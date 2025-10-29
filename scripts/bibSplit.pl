@@ -66,16 +66,20 @@ if ($key eq $target) {  # only top level entries
 
   my $itemDate = defined $obj->{isoDateString} ? $obj->{isoDateString} : '';
 
+  print STDERR "Processing key \"$key\" of type \"$type\"\n";
   my $itemAuthors = '';
   if (ref($obj->{authorsFormatted}) eq 'ARRAY' && @{$obj->{authorsFormatted}}) {
+    print STDERR "processing authors for key \"$key\"\n";
     $itemAuthors = "\n";
     for my $a (@{$obj->{authorsFormatted}}) {
-    #  my $quoted = encode_json($a // '');
-    #  $itemAuthors .= "  - $quoted\n";
-      $itemAuthors .= $a;
+      print STDERR " author: $a\n";
+      my $quoted = encode_json($a // '');
+      $itemAuthors .= "  - $quoted\n";
     }
+    print STDERR " finished:  itemAuthors: $itemAuthors\n";
     $itemAuthors =~ s/\n$//;  # strip trailing newline
   }
+  print STDERR " finished authors for key \"$key\" itemAuthors on exit: $itemAuthors\n";
 
   my $itemEditors = '';
   if (ref($obj->{editorsFormatted}) eq 'ARRAY' && @{$obj->{editorsFormatted}}) {
