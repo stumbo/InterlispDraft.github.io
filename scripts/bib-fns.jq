@@ -55,7 +55,7 @@ def author_string_list:
 
 # If you want the field added into each item:
 def add_author_string:
-  . + { authorsFormatted: (author_string_list) };
+  . + { authorsFormattedList: (author_string_list) };
 
 def make_DOI_to_url($doi):
   if ($doi | startswith("https:")) then $doi else "https://doi.org/" + ($doi | ltrimstr("/")) end ;

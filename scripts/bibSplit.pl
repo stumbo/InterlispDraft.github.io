@@ -68,10 +68,10 @@ if ($key eq $target) {  # only top level entries
 
   print STDERR "Processing key \"$key\" of type \"$type\"\n";
   my $itemAuthors = '';
-  if (ref($obj->{authorsFormatted}) eq 'ARRAY' && @{$obj->{authorsFormatted}}) {
+  if (ref($obj->{authorsFormattedList}) eq 'ARRAY' && @{$obj->{authorsFormattedList}}) {
     print STDERR "processing authors for key \"$key\"\n";
     $itemAuthors = "\n";
-    for my $a (@{$obj->{authorsFormatted}}) {
+    for my $a (@{$obj->{authorsFormattedList}}) {
       print STDERR " author: $a\n";
       my $quoted = encode_json($a // '');
       $itemAuthors .= "  - $quoted\n";
