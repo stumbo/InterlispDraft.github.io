@@ -269,7 +269,7 @@ items=$(jq 'include "./bib-fns";map(issued_iso_string)' <<< "$items")
 
 items=$(jq 'include "./bib-fns";map(add_author_string)' <<< "$items")
 
-items=$(jq 'include "./bib-fns";map(add_editor_string)' <<< "$items")
+#items=$(jq 'include "./bib-fns";map(add_editor_string)' <<< "$items")
 # if $removeChildrenFromFinalFile; then
 #   # Remove .children arrays, if any. Save space.
 #   items=$(jq 'map(del(.children))' <<< "$items")
