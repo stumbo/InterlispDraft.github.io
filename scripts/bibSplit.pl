@@ -70,8 +70,9 @@ if ($key eq $target) {  # only top level entries
   if (ref($obj->{authorsFormatted}) eq 'ARRAY' && @{$obj->{authorsFormatted}}) {
     $itemAuthors = "\n";
     for my $a (@{$obj->{authorsFormatted}}) {
-      my $quoted = encode_json($a // '');
-      $itemAuthors .= "  - $quoted\n";
+    #  my $quoted = encode_json($a // '');
+    #  $itemAuthors .= "  - $quoted\n";
+      $itemAuthors .= $a;
     }
     $itemAuthors =~ s/\n$//;  # strip trailing newline
   }
