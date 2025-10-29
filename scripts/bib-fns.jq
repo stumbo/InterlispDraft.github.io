@@ -55,7 +55,7 @@ def author_string_list:
 
 # If you want the field added into each item:
 def add_author_string:
-  . + { authorsFormatted: (author_string_list) };
+  . + { authorsFormattedList: (author_string_list) };
 
 def raise_issued_date_parts:
   if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then setpath(["issuedDateParts"]; .issued."date-parts"[0]) else . end;
