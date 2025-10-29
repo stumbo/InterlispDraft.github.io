@@ -30,7 +30,12 @@ def issued_iso_string:
     . 
   end;
 
-def format_person_name:
+# Build ["Family, Given", "Family2, Given2", ...] string array from .author array.
+# Falls back to other common shapes (name / firstName+lastName). Skips empty parts.
+def author_string_list:
+  ( .author // [] )
+  | dbg("author_string_list.count"; length)
+  | map(
       if (has("family") and .family != null and (.family|tostring|length)>0) then
         .family
         + ( if (has("given") and .given != null and (.given|tostring|length)>0)
@@ -45,28 +50,12 @@ def format_person_name:
         .name
       else
         empty
-  end;
-
-# Build ["Family, Given", "Family2, Given2", ...] string array from .author array.
-# Falls back to other common shapes (name / firstName+lastName). Skips empty parts.
-def author_string_list:
-  ( .author // [] )
-#  | dbg("author_string_list.count"; length)
-  | map(format_person_name);
+      end
+    );
 
 # If you want the field added into each item:
 def add_author_string:
-  if (.author) then . + { authorsFormatted: (author_string_list) } end;
-  
-# Likewise for editors
-def editor_string_list:
-  ( .editor // [] )
-#  | dbg("editor_string_list.count"; length)
-  | map(format_person_name);
-
-# If you want the field added into each item:
-def add_editor_string:
-  if (.editor) then. + { editorsFormatted: (editor_string_list) } end;
+  . + { authorsFormatted: (author_string_list) };
 
 def make_DOI_to_url($doi):
   if ($doi | startswith("https:")) then $doi else "https://doi.org/" + ($doi | ltrimstr("/")) end ;
