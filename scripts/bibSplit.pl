@@ -119,9 +119,9 @@ if ($key eq $target) {  # only top level entries
 
   add_editor_string($obj);
   my $itemEditors = '';
-  if (ref($obj->{editorsFormatted}) eq 'ARRAY' && @{$obj->{editorsFormatted}}) {
+  if (ref($obj->{editorsFormattedList}) eq 'ARRAY' && @{$obj->{editorsFormattedList}}) {
     $itemEditors = "\n";
-    for my $a (@{$obj->{editorsFormatted}}) {
+    for my $a (@{$obj->{editorsFormattedList}}) {
       my $quoted = encode_json($a // '');
       $itemEditors .= "  - $quoted\n";
     }
