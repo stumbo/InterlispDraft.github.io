@@ -26,6 +26,46 @@ sub sanitize_text {
   return $s;
 }
 
+# Helper: non-blank check
+sub _nonblank {
+  my ($v) = @_;
+  return defined($v) && length($v);
+}
+
+# Generic formatter: build ["Family, Given", ...] from a people array (author/editor)
+sub people_to_string_list {
+  my ($people) = @_;
+  return [] unless ref($people) eq 'ARRAY';
+
+  my @out;
+  for my $p (@$people) {
+    next unless ref($p) eq 'HASH';
+    my $family = sanitize_text($p->{family}    // $p->{lastName}  // '');
+    my $given  = sanitize_text($p->{given}     // $p->{firstName} // '');
+    my $name   = sanitize_text($p->{name}      // '');
+
+    my $s = '';
+    if (_nonblank($family)) {
+      $s = $family . (_nonblank($given) ? ", $given" : "");
+    } elsif (_nonblank($name)) {
+      $s = $name;
+    } else {
+      next;
+    }
+    push @out, $s if _nonblank($s);
+  }
+  return \@out;
+}
+
+sub set_people_formatted {
+  my ($obj, $src_key, $dst_key) = @_;
+  $obj->{$dst_key} = people_to_string_list($obj->{$src_key});
+  return $obj->{$dst_key}; # also return the list if you want to use it inline
+}
+
+sub add_author_string { my ($obj) = @_; return set_people_formatted($obj, 'author', 'authorsFormattedList'); }
+sub add_editor_string { my ($obj) = @_; return set_people_formatted($obj, 'editor', 'editorsFormattedList'); }
+
 BEGIN 
 { 
   $bibDir = $ENV{'BIBLIOGRAPHY_DIR'};
@@ -66,20 +106,22 @@ if ($key eq $target) {  # only top level entries
 
   my $itemDate = defined $obj->{isoDateString} ? $obj->{isoDateString} : '';
 
+  add_author_string($obj);
   my $itemAuthors = '';
-  if (ref($obj->{authorsFormatted}) eq 'ARRAY' && @{$obj->{authorsFormatted}}) {
+  if (ref($obj->{authorsFormattedList}) eq 'ARRAY' && @{$obj->{authorsFormattedList}}) {
     $itemAuthors = "\n";
-    for my $a (@{$obj->{authorsFormatted}}) {
+    for my $a (@{$obj->{authorsFormattedList}}) {
       my $quoted = encode_json($a // '');
       $itemAuthors .= "  - $quoted\n";
     }
     $itemAuthors =~ s/\n$//;  # strip trailing newline
   }
 
+  add_editor_string($obj);
   my $itemEditors = '';
-  if (ref($obj->{editorsFormatted}) eq 'ARRAY' && @{$obj->{editorsFormatted}}) {
+  if (ref($obj->{editorsFormattedList}) eq 'ARRAY' && @{$obj->{editorsFormattedList}}) {
     $itemEditors = "\n";
-    for my $a (@{$obj->{editorsFormatted}}) {
+    for my $a (@{$obj->{editorsFormattedList}}) {
       my $quoted = encode_json($a // '');
       $itemEditors .= "  - $quoted\n";
     }
