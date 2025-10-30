@@ -30,33 +30,6 @@ def issued_iso_string:
     . 
   end;
 
-# Build ["Family, Given", "Family2, Given2", ...] string array from .author array.
-# Falls back to other common shapes (name / firstName+lastName). Skips empty parts.
-def author_string_list:
-  ( .author // [] )
-  | dbg("author_string_list.count"; length)
-  | map(
-      if (has("family") and .family != null and (.family|tostring|length)>0) then
-        .family
-        + ( if (has("given") and .given != null and (.given|tostring|length)>0)
-            then ", " + (.given|tostring)
-            else "" end )
-      elif (has("lastName") and .lastName != null) then
-        .lastName
-        + ( if (has("firstName") and .firstName != null and (.firstName|tostring|length)>0)
-            then ", " + (.firstName|tostring)
-            else "" end )
-      elif (has("name") and .name != null) then
-        .name
-      else
-        empty
-      end
-    );
-
-# If you want the field added into each item:
-def add_author_string:
-  . + { authorsFormattedList: (author_string_list) };
-
 def make_DOI_to_url($doi):
   if ($doi | startswith("https:")) then $doi else "https://doi.org/" + ($doi | ltrimstr("/")) end ;
 
