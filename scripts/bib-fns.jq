@@ -5,7 +5,7 @@ def dbg($label; $value):
     | (($label + ": " + ($value | tojson)) | debug)    # prints to stderr
     | $in;                                             # return original value
 
-def nonBlankKey($keyName): 
+def nonBlankKey($keyName):
   has($keyName) and (.[$keyName] | tostring | length >= 1);
 
 def blankKey($keyName): 
@@ -23,21 +23,21 @@ def raise_issued_date_parts:
 def pad2: tostring | if length==1 then "0"+. else . end;
 
 def issued_iso_string:
-  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then 
-    setpath(["isoDateString"]; 
+  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then
+    setpath(["isoDateString"];
     (.issued["date-parts"][0]) as $p | ($p[0]|tostring) + "-" + (($p[1]? // 1)|pad2) + "-" + (($p[2]? // 1)|pad2))
-  else 
-    . 
+  else
+    .
   end;
 
 def issued_date_readable:
-  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then 
-    setpath(["readableDateString"]; 
+  if nonBlankKey("issued") and (.issued | nonBlankKey("date-parts")) then
+    setpath(["readableDateString"];
     (.issued["date-parts"][0]) as $p | $p | map(pad2) | join("-"))
-  else 
-    . 
+  else
+    .
   end;
-  
+
 def format_person_name:
       if (has("family") and .family != null and (.family|tostring|length)>0) then
         .family
@@ -65,7 +65,7 @@ def author_string_list:
 # If you want the field added into each item:
 def add_author_string:
   if (.author) then . + { authorsFormatted: (author_string_list) } end;
-  
+
 # Likewise for editors
 def editor_string_list:
   ( .editor // [] )

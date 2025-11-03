@@ -3,8 +3,8 @@ use JSON::PP qw(decode_json encode_json);
 use Encode qw(decode encode is_utf8);  
 use Unicode::Normalize qw(NFC);
 use utf8;
-BEGIN 
-{ 
+BEGIN
+{
   $bibDir = $ENV{'BIBLIOGRAPHY_DIR'};
   $bibItemsDir = $ENV{'BIBITEMS_DIR'};
 }

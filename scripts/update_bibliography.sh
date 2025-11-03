@@ -50,11 +50,11 @@ showInfoLevel=2         # --infolevel/-i
 #  0: NO showInfo messages.
 #  1: high level general info messages.
 #  2: warning-type messages.
-#  3: 
-#  4: 
+#  3:
+#  4:
 #  5: detailed general info messages.
-#  6: 
-#  7: 
+#  6:
+#  7:
 #  8: individual processing steps (most of which may generate a debug File -- see $debugFiles)
 #  9: very detailed general info messages.
 # 10: extremely detailed messages (e.g., calls to curl, etc.)
