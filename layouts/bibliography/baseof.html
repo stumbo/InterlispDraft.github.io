@@ -4,6 +4,7 @@
     {{ with .Site.Language.Lang }} lang="{{ . }}" {{- end }} {{/**/ -}}
     class="no-js">
   <head>
+    <meta name="description" content="testing 1 2 3">
     {{ partial "head.html" . }}
   </head>
   <body class="td-{{ .Kind }}{{ with .Page.Params.body_class }} {{ . }}{{ end }}">

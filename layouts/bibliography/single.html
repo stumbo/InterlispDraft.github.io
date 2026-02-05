@@ -1,5 +1,16 @@
 {{- define "main" -}}
-<article class="bibliography-entry">
+<!-- DEBUG: Meta description variables -->
+<div style="background: #ffffcc; border: 2px solid #cc0000; padding: 10px; margin: 10px 0; font-family: monospace; font-size: 12px;">
+  <strong>DEBUG - Meta Description Variables:</strong><br>
+  <strong>.Description:</strong> [{{ .Description }}]<br>
+  <strong>.Summary:</strong> [{{ .Summary | plainify | truncate 200 }}]<br>
+  <strong>site.Params.description:</strong> [{{ site.Params.description }}]<br>
+  <strong>.Params.abstract:</strong> [{{ with .Params.abstract }}{{ . | plainify | truncate 200 }}{{ else }}(empty){{ end }}]<br>
+  <strong>.Title:</strong> [{{ .Title }}]<br>
+  <strong>.Type:</strong> [{{ .Type }}]
+</div>
+<!-- END DEBUG -->
+<article class="bibliography-entry" id="{{ .File.BaseFileName }}">
   <h1>{{ .Title }}</h1>
 
 {{- $authors := .Params.authors -}}
