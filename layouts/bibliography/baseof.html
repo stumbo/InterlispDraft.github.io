@@ -4,7 +4,6 @@
     {{ with .Site.Language.Lang }} lang="{{ . }}" {{- end }} {{/**/ -}}
     class="no-js">
   <head>
-    <meta name="description" content="testing 1 2 3">
     {{ partial "head.html" . }}
   </head>
   <body class="td-{{ .Kind }}{{ with .Page.Params.body_class }} {{ . }}{{ end }}">
@@ -17,7 +16,7 @@
           <aside class="d-none d-xl-block col-xl-4 td-sidebar-toc d-print-none">
             {{ partial "page-meta-links.html" . }}
             {{ partial "toc.html" . }}
-            <div data-nosnippet>
+            <div data-nosnippet data-pagefind-ignore>
               {{ partial "taxonomy_terms_clouds.html" . }}
             </div>
           </aside>
