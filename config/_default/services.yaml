@@ -3,3 +3,6 @@ rss:
   title: "Interlisp.org RSS Feed"
   description: "The latest news from Interlisp.org"
   link: "https://interlisp.org"
+
+googleAnalytics:
+    id: G-JXK20KN1W1
