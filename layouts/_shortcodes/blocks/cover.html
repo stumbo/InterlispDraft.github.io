@@ -5,6 +5,7 @@
 {{ $image_anchor := .Get "image_anchor" | default "smart" -}}
 {{/* Height can be one of: auto, min, med, max, full. */}}
 {{ $height := .Get "height" | default "max" -}}
+{{ $baseURL := .Site.BaseURL -}}
 
 {{ with $promo_image -}}
   {{ $promo_image_big := . -}}
@@ -13,15 +14,15 @@
     {{ $promo_image_big = .Fill (printf "1920x1080 %s" $image_anchor) -}}
     {{ $promo_image_small = .Fill (printf "960x540 %s" $image_anchor) -}}
   {{ end -}}
-<link rel="preload" as="image" href="{{ $promo_image_small.RelPermalink }}" media="(max-width: 1200px)">
-<link rel="preload" as="image" href="{{ $promo_image_big.RelPermalink }}" media="(min-width: 1200px)">
+<link rel="preload" as="image" href="{{ $promo_image_small.Permalink }}" media="(max-width: 1200px)">
+<link rel="preload" as="image" href="{{ $promo_image_big.Permalink }}" media="(min-width: 1200px)">
 <style>
 #{{ $blockID }} {
-  background-image: url({{ $promo_image_small.RelPermalink }});
+  background-image: url({{ $promo_image_small.Permalink }});
 }
 @media only screen and (min-width: 1200px) {
   #{{ $blockID }} {
-    background-image: url({{ $promo_image_big.RelPermalink }});
+    background-image: url({{ $promo_image_big.Permalink }});
   }
 }
 </style>
@@ -30,7 +31,7 @@
 <section id="{{ $blockID }}" class="row td-cover-block td-cover-block--height-{{ $height -}}
     {{ if not .Site.Params.ui.navbar_translucent_over_cover_disable }} js-td-cover
     {{- end }} td-overlay td-overlay--dark -bg-{{ $col_id }}">
-  <div class="col-12 hero-content-column" style="background-image: url({{ .Site.BaseURL }}Resources/logoWindows.svg)">
+  <div class="col-12 hero-content-column" style="background-image: url({{ $baseURL }}Resources/logoWindows.svg)">
     <div class="container td-overlay__inner">
       <div class="text-center">
         {{ with .Get "title" }}<h1 class="display-1 mt-0 mt-md-5 pb-4">{{ . | html }}</h1>{{ end }}
