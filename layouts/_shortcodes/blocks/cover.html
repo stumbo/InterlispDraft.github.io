@@ -27,16 +27,10 @@
 </style>
 {{ end -}}
 
-<div style="background: yellow; color: black; padding: 10px; font-size: 12px;">
-  DEBUG: baseURL={{ .Site.BaseURL }}<br>
-  DEBUG: relURL={{ "/Resources/logoWindows.svg" | relURL }}<br>
-  DEBUG: absURL={{ "/Resources/logoWindows.svg" | absURL }}<br>
-</div>
-
 <section id="{{ $blockID }}" class="row td-cover-block td-cover-block--height-{{ $height -}}
     {{ if not .Site.Params.ui.navbar_translucent_over_cover_disable }} js-td-cover
     {{- end }} td-overlay td-overlay--dark -bg-{{ $col_id }}">
-  <div class="col-12 hero-content-column" style="background-image: url({{ "/Resources/logoWindows.svg" | relURL }})">
+  <div class="col-12 hero-content-column" style="background-image: url({{ .Site.BaseURL }}Resources/logoWindows.svg)">
     <div class="container td-overlay__inner">
       <div class="text-center">
         {{ with .Get "title" }}<h1 class="display-1 mt-0 mt-md-5 pb-4">{{ . | html }}</h1>{{ end }}
