@@ -18,7 +18,7 @@ There several ways to get involved in the Medley Interlisp Project, depending on
 
 ## 1. Try it!
 
-We're actively trying to improve the new user experience, but don't expect a polished commercial product--we're still in the middle of restoration. But things are pretty stable. [online.interlisp.org](https://online.interlisp.org) should get you started. Type in (+ 1 2 3).
+We're actively trying to improve the new user experience, but don't expect a polished commercial product--we're still in the middle of restoration. But things are pretty stable. Reading the [Medley primer](https://primer.interlisp.org) and checking out the system at [online.interlisp.org](https://online.interlisp.org) should get you started.
 
 ## 2. GitHub
 
