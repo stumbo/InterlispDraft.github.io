@@ -6,7 +6,7 @@
 
     "hugo-extended": "^0.155.3",
 
-    "postcss": "^8.4.16",
+    "postcss": "^8.5.13",
 
     "postcss-cli": "^10.0.0"
 
