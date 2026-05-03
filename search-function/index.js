@@ -54,8 +54,13 @@ exports.search = async (req, res) => {
         summarySpec: {
           summaryResultCount: 5,
           includeCitations: true,
+          useSemanticChunks: true,
+          languageCode: 'en-US',
           modelPromptSpec: {
             preamble: buildPreamble(context)
+          },
+          modelSpec: {
+            version: 'stable'
           }
         },
         snippetSpec: {
@@ -87,6 +92,7 @@ exports.search = async (req, res) => {
     // Add this right after const data = await response.json();
     console.log('FIRST RESULT:', JSON.stringify(data.results?.[0], null, 2));
     console.log('SUMMARY FULL:', JSON.stringify(data.summary, null, 2));
+    console.log('CITATIONS:', JSON.stringify(data.summary?.summaryWithMetadata?.references?.[0]));
 
     console.log('RESPONSE KEYS:', Object.keys(data));
     console.log('SUMMARY:', JSON.stringify(data.summary));
@@ -98,22 +104,43 @@ exports.search = async (req, res) => {
     
       const url = derived.link || null;
       const snippet = derived.snippets?.[0]?.snippet || null;
-    
+      // Strip angle brackets to prevent HTML/script tag injection in display text
+      const stripHtml = (str) => str ? str.replace(/[<>]/g, '') : null;
+      
       return {
         id:      result.document?.id,
         title:   derived.title || null,
         url,
-        snippet,
+        snippet: stripHtml(derived.snippets?.[0]?.snippet || null),
         section: url?.replace('https://interlisp.org/', '')?.split('/')?.[0] || '',
       };
     }).filter(r => r?.url);
 
+    // Build a map of document ID to URL from search results
+    const docIdToUrl = {};
+    (data.results || []).forEach(result => {
+      const id  = result.document?.id;
+      const url = result.document?.derivedStructData?.link;
+      if (id && url) docIdToUrl[id] = url;
+    });
+    
+    // Enrich references with URLs by matching document IDs
+    const references = (data.summary?.summaryWithMetadata?.references || []).map(ref => {
+      // Extract document ID from the full document path
+      const docId = ref.document?.split('/').pop();
+      return {
+        title: ref.title,
+        uri:   docIdToUrl[docId] || null,
+        docId
+      };
+    });
+    
     const summaryText = data.summary?.summaryText || null;
-
+    
     res.json({
       summary: summaryText ? {
         summaryText,
-        citations: data.summary?.summaryWithMetadata?.references || []
+        citations: references
       } : null,
       results
     });
