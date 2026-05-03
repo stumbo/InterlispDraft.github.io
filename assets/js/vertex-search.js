@@ -64,6 +64,27 @@
       if (data.summary?.summaryText) {
         summaryTxt.textContent = data.summary.summaryText;
         summaryEl.style.display = 'block';
+      
+        // Render numbered citation list
+        const refs = data.summary?.citations || [];
+        const validRefs = refs.filter(r => r.title || r.uri);
+      
+        if (validRefs.length > 0) {
+          const citationHtml = validRefs.map((ref, i) => `
+            <div class="search-citation">
+              <span class="citation-number">[${i + 1}]</span>
+              ${ref.uri
+                ? `<a href="${escapeHtml(ref.uri)}" target="_blank" rel="noopener">${escapeHtml(ref.title || ref.uri)}</a>`
+                : `<span>${escapeHtml(ref.title || 'Unknown source')}</span>`
+              }
+            </div>
+          `).join('');
+      
+          const citationsDiv = document.createElement('div');
+          citationsDiv.className = 'search-citations mt-3';
+          citationsDiv.innerHTML = '<p class="citations-label">Sources</p>' + citationHtml;
+          summaryEl.querySelector('.ai-summary').appendChild(citationsDiv);
+        }
       }
 
       // Show results
@@ -73,16 +94,17 @@
       }
 
       // Show result count
-      hitsEl.innerHTML = `<p class="text-muted mb-3">${data.results.length} results for <strong>${escapeHtml(q)}</strong></p>` +
-        data.results.map(r => `
-          <div class="td-search-hit mb-4">
-            <h5 class="mb-1">
-              <a href="${escapeHtml(r.url)}">${escapeHtml(r.title || 'Untitled')}</a>
-            </h5>
-            ${r.snippet ? `<p class="mb-1 text-muted small">${escapeHtml(r.snippet)}</p>` : ''}
-            <p class="mb-0"><small class="text-success">${escapeHtml(r.url)}</small></p>
-          </div>
-        `).join('');
+      hitsEl.innerHTML =
+      `<p class="text-muted mb-3">${data.results.length} results for <strong>${escapeHtml(q)}</strong></p>` +
+      data.results.map(r => `
+        <div class="td-search-hit mb-4">
+          <h5 class="mb-1">
+            <a href="${escapeHtml(r.url)}">${escapeHtml(r.title || 'Untitled')}</a>
+          </h5>
+          ${r.snippet ? `<p class="mb-1 text-muted small">${escapeHtml(r.snippet)}</p>` : ''}
+          <p class="mb-0"><small class="text-success">${escapeHtml(r.url)}</small></p>
+        </div>
+      `).join('');
 
     } catch (err) {
       statusEl.textContent = 'Search error: ' + err.message;

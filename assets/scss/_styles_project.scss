@@ -145,3 +145,34 @@
   padding: 1rem 0;
   color: #666;
 }
+
+.search-citations {
+    border-top: 1px solid #d0e4ff;
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+  
+    .citations-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #1a73e8;
+      margin-bottom: 0.4rem;
+    }
+  }
+  
+  .search-citation {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+  
+    .citation-number {
+      color: #1a73e8;
+      font-weight: 600;
+      margin-right: 0.4rem;
+    }
+
+    a {
+      color: #444;
+      &:hover { color: #1a73e8; }
+    }
+  }
