@@ -168,19 +168,59 @@
   &__title {
     margin: 0 0 0.25rem;
     font-size: 1rem;
-    a { color: #1a0dab; }
+    line-height: 1.35;
+    a {
+      color: #1a0dab;
+      text-decoration: none;
+    }
+
+    a:hover,
+    a:focus {
+      text-decoration: underline;
+    }
   }
 
   &__snippet {
     font-size: 0.875rem;
     color: #545454;
     margin: 0.25rem 0;
+
+    p {
+      margin: 0 0 0.4rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    b,
+    strong {
+      color: #1f1f1f;
+      font-weight: 700;
+    }
   }
 
   &__url {
-    color: #006621;
+    color: #0b8043;
     margin: 0;
+    word-break: break-word;
   }
+
+  &__meta {
+    margin-top: 0.4rem;
+  }
+}
+
+.search-meta-chip {
+  display: inline-block;
+  margin-right: 0.35rem;
+  margin-bottom: 0.2rem;
+  padding: 0.08rem 0.45rem;
+  font-size: 0.72rem;
+  border-radius: 999px;
+  background: #eef2f7;
+  color: #4a5568;
+  border: 1px solid #dde3eb;
 }
 
 .td-search-loading,
