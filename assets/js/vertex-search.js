@@ -54,6 +54,86 @@ import DOMPurify from 'dompurify';
     });
   }
 
+  function renderResultSnippet(snippetText, result) {
+    if (!snippetText) return '';
+    const normalized = normalizeSnippetText(snippetText, result);
+    const html = marked.parse(normalized);
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'b', 'strong', 'em', 'code', 'pre', 'br', 'ul', 'ol', 'li', 'a'],
+      ALLOWED_ATTR: ['href', 'title', 'target', 'rel']
+    });
+  }
+
+  function decodeHtmlEntities(text) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = String(text || '');
+    return textarea.value;
+  }
+
+  function normalizeSnippetText(text, result) {
+    let output = decodeHtmlEntities(text);
+
+    // Repair malformed highlight markers like "bIssue/b" or "bmedley issues/b".
+    output = output.replace(/(^|[\s(\[{])b([^\n]{1,120}?)\/b(?=[\s)\]}.,;:!?]|$)/gi,
+      (match, prefix, value) => `${prefix}<strong>${value.trim()}</strong>`);
+
+    // Repair malformed URLs where emphasis markers leak into the URL text.
+    output = output
+      .replace(/https?:\/\/b/gi, 'https://')
+      .replace(/\bb([a-z0-9.-]+)\/b/gi, '$1')
+      .replace(/\/(b)([a-z0-9._-]+)/gi, '/$2')
+      .replace(/([a-z0-9._-]+)\/b(?=\/|\b)/gi, '$1')
+      .replace(/\s*\.\.\.\s*/g, ' ');
+
+    output = normalizeGithubIssueMentions(output, result);
+
+    // Drop noisy raw URL tails often appended by snippet extraction.
+    output = output.replace(/https?:\/\/\S+$/i, '');
+
+    // Normalize whitespace for cleaner one-line snippets.
+    output = output.replace(/\s+/g, ' ').trim();
+    return output;
+  }
+
+  function normalizeGithubIssueMentions(text, result) {
+    const repo = result?.repo;
+    if (!repo) return text;
+
+    // Fix malformed markdown links like: [Issue 609](https://bgithub/b.com/Interlisp/bmedley/b/bissues/b/609)
+    let output = text.replace(
+      /\[(Issue\s+#?\d+)\]\((https?:\/\/[^)]+)\)/gi,
+      (match, label, rawUrl) => {
+        const issueNumberMatch = label.match(/(\d+)/);
+        if (!issueNumberMatch) return match;
+        const issueNumber = issueNumberMatch[1];
+        const cleanUrl = `https://github.com/Interlisp/${repo}/issues/${issueNumber}`;
+        return `[${label}](${cleanUrl})`;
+      }
+    );
+
+    // Convert plain text mentions like "Issue 609" or "Issue #609" into links.
+    output = output.replace(/\bIssue\s+#?(\d+)\b/g, (match, num) => {
+      const issueUrl = `https://github.com/Interlisp/${repo}/issues/${num}`;
+      return `[Issue ${num}](${issueUrl})`;
+    });
+
+    return output;
+  }
+
+  function formatDisplayUrl(rawUrl) {
+    if (!rawUrl) return '';
+
+    try {
+      const parsed = new URL(rawUrl);
+      const host = parsed.host.replace(/^www\./, '');
+      const pathSegments = parsed.pathname.split('/').filter(Boolean);
+      const path = pathSegments.length > 0 ? ` › ${pathSegments.join(' › ')}` : '';
+      return `${host}${path}`;
+    } catch (_) {
+      return rawUrl;
+    }
+  }
+
   async function doSearch(q) {
     if (!q) {
       statusEl.textContent = 'Enter a search query above.';
@@ -136,11 +216,18 @@ import DOMPurify from 'dompurify';
       `<p class="text-muted mb-3">${data.results.length} results for <strong>${escapeHtml(q)}</strong></p>` +
       data.results.map(r => `
         <div class="td-search-hit mb-4">
-          <h5 class="mb-1">
+          <h5 class="td-search-hit__title mb-1">
             <a href="${escapeHtml(r.url)}">${escapeHtml(r.title || 'Untitled')}</a>
           </h5>
-          ${r.snippet ? `<p class="mb-1 text-muted small">${escapeHtml(r.snippet)}</p>` : ''}
-          <p class="mb-0"><small class="text-success">${escapeHtml(r.url)}</small></p>
+          <p class="td-search-hit__url mb-1"><small>${escapeHtml(formatDisplayUrl(r.url))}</small></p>
+          ${r.snippet ? `<div class="td-search-hit__snippet mb-1 text-muted small">${renderResultSnippet(r.snippet, r)}</div>` : ''}
+          ${(r.type || r.repo || r.state)
+            ? `<p class="td-search-hit__meta mb-0">
+                ${r.type ? `<span class="search-meta-chip">${escapeHtml(r.type)}</span>` : ''}
+                ${r.repo ? `<span class="search-meta-chip">${escapeHtml(r.repo)}</span>` : ''}
+                ${r.state ? `<span class="search-meta-chip">${escapeHtml(r.state)}</span>` : ''}
+              </p>`
+            : ''}
         </div>
       `).join('');
 

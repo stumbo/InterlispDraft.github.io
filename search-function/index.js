@@ -100,18 +100,28 @@ exports.search = async (req, res) => {
 
     const results = (data.results || []).map(result => {
       const derived = result.document?.derivedStructData;
-      if (!derived) return null;
-    
-      const url = derived.link || null;
-      const snippet = derived.snippets?.[0]?.snippet || null;
-      // Strip angle brackets to prevent HTML/script tag injection in display text
-      const stripHtml = (str) => str ? str.replace(/[<>]/g, '') : null;
-      
+      const struct  = result.document?.structData;
+
+      // Some documents expose URL as derivedStructData.link, others as derivedStructData.url.
+      // Support both so GitHub issues/PRs/discussions are surfaced as clickable results.
+      const url = derived?.link || derived?.url || struct?.url || null;
+
+      // title: website crawl uses derivedStructData.title; structured docs use keyPropertyMapping:"title"
+      // which also maps to derivedStructData.title — fall back to structData.title if missing.
+      const title = derived?.title || struct?.title || null;
+
+      // snippets: generated from content field when keyPropertyMapping:"body" is set in the schema.
+      // Falls back to structData.content substring for structured docs without body mapping.
+      const rawSnippet = derived?.snippets?.[0]?.snippet || struct?.content?.slice(0, 300) || null;
+
       return {
         id:      result.document?.id,
-        title:   derived.title || null,
+        title,
         url,
-        snippet: stripHtml(derived.snippets?.[0]?.snippet || null),
+        snippet: rawSnippet,
+        type: struct?.type || null,
+        repo: struct?.repo || null,
+        state: struct?.state || null,
         section: url?.replace('https://interlisp.org/', '')?.split('/')?.[0] || '',
       };
     }).filter(r => r?.url);
@@ -120,7 +130,8 @@ exports.search = async (req, res) => {
     const docIdToUrl = {};
     (data.results || []).forEach(result => {
       const id  = result.document?.id;
-      const url = result.document?.derivedStructData?.link;
+      const derived = result.document?.derivedStructData;
+      const url = derived?.link || derived?.url || result.document?.structData?.url;
       if (id && url) docIdToUrl[id] = url;
     });
     
@@ -152,7 +163,10 @@ exports.search = async (req, res) => {
 };
 
 function buildPreamble(context) {
-  const base = `You are a search assistant for the Interlisp documentation site.
+  const base = `You are a search assistant for the Interlisp site. You answer questions about documentation, code examples, and historical information related to Interlisp. Use the search results to provide accurate and concise answers. 
+If the user query is about a specific section of the site, prioritize information from that section in your response.
+If the question is about code, provide code snippets where relevant.  Be sure to distinguish between different versions of Interlisp or Common Lisp.
+If the question is related to maintaining and modernizing Interlisp, include information from the GitHub site, its Issues, Discussions and Pull Requests.
 Answer in strict Markdown only.
 Use this structure exactly when applicable:
 - One short opening paragraph.
