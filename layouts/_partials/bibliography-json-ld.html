@@ -172,9 +172,6 @@
   {{- with .Params.publisher -}}
     {{- $ld = merge $ld (dict "publisher" (dict "@type" "Organization" "name" .)) -}}
   {{- end -}}
-  {{- with .Params.place -}}
-    {{- $ld = merge $ld (dict "locationCreated" .) -}}
-  {{- end -}}
 {{- end -}}
 
 {{- /* ── Chapter ──────────────────────────────────────────────────────── */ -}}

@@ -58,10 +58,12 @@ if ($key eq $target) {  # only top level entries
 
   my $type = $obj->{type} // '';
 
-  # Titles can have colons and other special characters.  Place YAML keyword on one line
-  # and follow it with the title indented on subsequent line
+  # Titles can have colons and other special characters.  Use a YAML double-quoted scalar
+  # so the decoded value has no trailing newline (the literal-block `|` style would add one).
   my $itemTitle = sanitize_text($obj->{title} // '');
-  my $title = $itemTitle eq '' ? "title: ''" : "title: |\n  $itemTitle\n";
+  (my $escapedTitle = $itemTitle) =~ s/\\/\\\\/g;
+  $escapedTitle =~ s/"/\\"/g;
+  my $title = $itemTitle eq '' ? "title: ''" : "title: \"$escapedTitle\"";
 
   # Abstracts can be multi-line and  contain multiple paragraphs.  Place YAML keyword on
   # one line and follow it with the abstract indented on subsequent lines.
