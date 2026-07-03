@@ -80,13 +80,13 @@ if ($key eq $target) {  # only top level entries
   my $itemAuthors = '';
   if (ref($obj->{authorsFormatted}) eq 'ARRAY' && @{$obj->{authorsFormatted}}) {
     $itemAuthors = "\n";
-    for my $a (@{$obj->{authorsFormatted}}) {
+    for my $author (@{$obj->{authorsFormatted}}) {
       # The encode_json is where extended unicode chars get corrupted, e.g., "Emanuelson, Pär"
       # There may be other things that now don't work!!
       # my $quoted = encode_json($a // '');
       # sanitize_text seems to handle them correctly
-      my $san = sanitize_text($a // '');
-      $itemAuthors .= "  - \"$san\"\n";
+      my $san_author = sanitize_text($author // '');
+      $itemAuthors .= "  - \"$san_author\"\n";
     }
     $itemAuthors =~ s/\n$//u;  # strip trailing newline
   }
@@ -94,11 +94,11 @@ if ($key eq $target) {  # only top level entries
   my $itemEditors = '';
   if (ref($obj->{editorsFormatted}) eq 'ARRAY' && @{$obj->{editorsFormatted}}) {
     $itemEditors = "\n";
-    for my $a (@{$obj->{editorsFormatted}}) {
+    for my $editor (@{$obj->{editorsFormatted}}) {
       # as above...
-      # my $quoted = encode_json($a // '');
-      my $san = sanitize_text($a // '');
-      $itemEditors .= "  - \"$san\"\n";
+      # my $quoted = encode_json($editor // '');
+      my $san_editor = sanitize_text($editor // '');
+      $itemEditors .= "  - \"$san_editor\"\n";
     }
     $itemEditors =~ s/\n$//u;  # strip trailing newline
   }
@@ -187,6 +187,7 @@ $abstract
 
 $extraFields
 tags:
+concepts:
 url_source: $urlSource
 zotero_url: "https://www.zotero.org/groups/2914042/items/$key"
 
