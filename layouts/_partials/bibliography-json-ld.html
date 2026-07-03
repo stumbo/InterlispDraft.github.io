@@ -11,18 +11,13 @@
 */ -}}
 {{- if eq .Type "bibliography" -}}
 
+{{- /* ── Date (resolved once, used by the IsPage branch below) ───────────── */ -}}
+{{- $date := partial "bibliography-date.html" . -}}
+
 {{- if .IsPage -}}
 
-{{- /* ── Date: mirror the logic in single.html ──────────────────────────── */ -}}
-{{- $dateTime := .Date -}}
-{{- with .Params.date -}}
-  {{- $iso := trim . " " -}}
-  {{- if and (ne $iso "") (findRE `^\d{4}-\d{2}-\d{2}$` $iso) -}}
-    {{- $dateTime = time $iso -}}
-  {{- end -}}
-{{- end -}}
-{{- $dateISO := $dateTime.Format "2006-01-02" -}}
-{{- $hasDate  := ne $dateISO "0001-01-01" -}}
+{{- $dateISO := $date.dateISO -}}
+{{- $hasDate := $date.hasDate -}}
 
 {{- /* ── Map item_type → Schema.org @type ──────────────────────────────── */ -}}
 {{- $itemType   := .Params.item_type | default "document" -}}
@@ -91,11 +86,36 @@
 {{- with .Params.url_source -}}{{- $sameAs = append (trim . " ") $sameAs -}}{{- end -}}
 {{- with .Params.zotero_url -}}{{- $sameAs = append (trim . " ") $sameAs -}}{{- end -}}
 
+{{- /* ── CS Concepts: about[] + keywords[] ────────────────────────────
+     Reads the `concepts:` list from front matter (list of concept IDs).
+     Looks each ID up in data/bibliography/concepts.json to get the name.
+     Emits schema:about (array of DefinedTerm) and schema:keywords (string).
+*/ -}}
+{{- $conceptData   := site.Data.bibliography.concepts -}}
+{{- $conceptIds    := .Params.concepts -}}
+{{- $aboutObjs     := slice -}}
+{{- $keywordNames  := slice -}}
+{{- if reflect.IsSlice $conceptIds -}}
+  {{- range $conceptIds -}}
+    {{- $id      := trim . " " -}}
+    {{- $concept := index $conceptData $id -}}
+    {{- if $concept -}}
+      {{- $aboutObjs    = append (dict
+            "@type"          "DefinedTerm"
+            "@id"            (printf "https://interlisp.org/concepts/#%s" $id)
+            "name"           $concept.name
+            "inDefinedTermSet" "https://interlisp.org/data/cs-concepts.jsonld"
+          ) $aboutObjs -}}
+      {{- $keywordNames = append $concept.name $keywordNames -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{- /* ── Base JSON-LD object (properties common to all types) ─────────── */ -}}
 {{- $ld := dict
   "@context"   "https://schema.org"
   "@type"      $schemaType
-  "name"       .Title
+  "name"       (.Title | strings.TrimRight "\n ")
   "url"        .Permalink
   "inLanguage" "en-US"
 -}}
@@ -124,6 +144,14 @@
   {{- $ld = merge $ld (dict "sameAs" $sameAs) -}}
 {{- end -}}
 
+{{- if gt (len $aboutObjs) 0 -}}
+  {{- $ld = merge $ld (dict "about" $aboutObjs) -}}
+{{- end -}}
+
+{{- if gt (len $keywordNames) 0 -}}
+  {{- $ld = merge $ld (dict "keywords" (delimit $keywordNames ", ")) -}}
+{{- end -}}
+
 {{- /* ── Patent: additionalType + structured identifiers ──────────────── */ -}}
 {{- if eq $itemType "patent" -}}
   {{- $ld = merge $ld (dict "additionalType" "Patent") -}}
@@ -140,10 +168,10 @@
   {{- end -}}
 
   {{- with .Params.assignee -}}
-    {{- $ld = merge $ld (dict "funder" (dict "@type" "Organization" "name" .)) -}}
+    {{- $ld = merge $ld (dict "copyrightHolder" (dict "@type" "Organization" "name" .)) -}}
   {{- end -}}
   {{- with .Params.issuing_authority -}}
-    {{- $ld = merge $ld (dict "countryOfOrigin" (dict "@type" "Country" "name" .)) -}}
+    {{- $ld = merge $ld (dict "validIn" (dict "@type" "DefinedRegion" "name" .)) -}}
   {{- end -}}
 {{- end -}}
 
@@ -160,10 +188,13 @@
 {{- /* ── Conference paper ─────────────────────────────────────────────── */ -}}
 {{- if eq $itemType "paper-conference" -}}
   {{- with .Params.proceedings_title -}}
-    {{- $ld = merge $ld (dict "isPartOf" (dict "@type" "Periodical" "name" .)) -}}
+    {{- $ld = merge $ld (dict "isPartOf" (dict "@type" "Book" "name" .)) -}}
   {{- end -}}
   {{- with .Params.publisher -}}
     {{- $ld = merge $ld (dict "publisher" (dict "@type" "Organization" "name" .)) -}}
+  {{- end -}}
+  {{- with .Params.place -}}
+    {{- $ld = merge $ld (dict "locationCreated" (dict "@type" "Place" "name" .)) -}}
   {{- end -}}
 {{- end -}}
 
@@ -171,9 +202,6 @@
 {{- if eq $itemType "book" -}}
   {{- with .Params.publisher -}}
     {{- $ld = merge $ld (dict "publisher" (dict "@type" "Organization" "name" .)) -}}
-  {{- end -}}
-  {{- with .Params.place -}}
-    {{- $ld = merge $ld (dict "locationCreated" .) -}}
   {{- end -}}
 {{- end -}}
 
@@ -194,10 +222,10 @@
   {{- with .Params.publisher -}}
     {{- $ld = merge $ld (dict "publisher" (dict "@type" "Organization" "name" .)) -}}
   {{- end -}}
-  {{- with .Params.reportType -}}
+  {{- with .Params.report_type -}}
     {{- $ld = merge $ld (dict "additionalType" .) -}}
   {{- end -}}
-  {{- with .Params.reportNumber -}}
+  {{- with .Params.report_number -}}
     {{- $ld = merge $ld (dict "identifier" (dict "@type" "PropertyValue" "propertyID" "report-number" "value" .)) -}}
   {{- end -}}
 {{- end -}}
@@ -243,15 +271,12 @@
   {{- end -}}
 {{- end -}}
 
-<script type="application/ld+json">
-{{- $ld | jsonify (dict "indent" "  ") | safeJS -}}
-</script>
+{{- printf "<script type=\"application/ld+json\">\n%s\n</script>" ($ld | jsonify (dict "indent" "  ")) | safeHTML -}}
 
 {{- else if .IsSection -}}
 
 {{- /* ── COLLECTION PAGE (bibliography index) ──────────────────────────── */ -}}
 {{- $pages := .RegularPages -}}
-{{- $pages  = sort $pages "Date" "desc" -}}
 {{- $pages  = sort $pages "Title" "asc" -}}
 
 {{- $itemList := slice -}}
@@ -281,9 +306,7 @@
   )
 -}}
 
-<script type="application/ld+json">
-{{- $ld | jsonify (dict "indent" "  ") | safeJS -}}
-</script>
+{{- printf "<script type=\"application/ld+json\">\n%s\n</script>" ($ld | jsonify (dict "indent" "  ")) | safeHTML -}}
 
 {{- end -}}
 
