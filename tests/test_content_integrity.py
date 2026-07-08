@@ -152,7 +152,7 @@ class TestEveryEntry:
         "authors", "editors", "abstract",
         "url_source", "zotero_url", "lastmod",
     })
-    _ENCOURAGED_KEYS = frozenset({"tags", "concepts"})
+    _ENCOURAGED_KEYS = frozenset({"tags"})
 
     @pytest.mark.parametrize("path,_name", _ENTRIES, ids=lambda x: x.name if hasattr(x, 'name') else x)
     def test_required_keys_present(self, path: Path, _name: str) -> None:
@@ -239,14 +239,6 @@ class TestEveryEntry:
         fm = _parse_front_matter(path)
         tags = fm.get("tags")
         assert tags in (None, ""), f"{path.name}: tags={tags!r} should be empty"
-
-    @pytest.mark.parametrize("path,_name", _ENTRIES)
-    def test_concepts_is_null_or_empty(self, path: Path, _name: str) -> None:
-        fm = _parse_front_matter(path)
-        concepts = fm.get("concepts")
-        assert concepts in (None, ""), (
-            f"{path.name}: concepts={concepts!r} should be empty"
-        )
 
     @pytest.mark.parametrize("path,_name", _ENTRIES)
     def test_url_source_format(self, path: Path, _name: str) -> None:

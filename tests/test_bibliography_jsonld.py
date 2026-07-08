@@ -223,7 +223,7 @@ class TestScholarlyArticle:
     """article-journal → ScholarlyArticle.  Fixture: ZTEST-JOURNAL.md
 
     Also exercises author name splitting, sameAs ordering, periodical
-    isPartOf, pagination fields, and concepts → about[]/keywords.
+    isPartOf, and pagination fields.
     """
 
     @pytest.fixture(autouse=True)
@@ -275,21 +275,6 @@ class TestScholarlyArticle:
 
     def test_pagination(self):
         assert self.ld["pagination"] == "45-67"
-
-    def test_about_defined_terms(self):
-        about = self.ld["about"]
-        ids = [term["@id"] for term in about]
-        assert "https://interlisp.org/concepts/#Interlisp" in ids
-        assert "https://interlisp.org/concepts/#ProgrammingLanguages" in ids
-        for term in about:
-            assert term["@type"] == "DefinedTerm"
-            assert term["inDefinedTermSet"] == "https://interlisp.org/data/cs-concepts.jsonld"
-            assert "name" in term
-
-    def test_keywords_from_concepts(self):
-        assert "Interlisp" in self.ld["keywords"]
-        assert "Programming Languages" in self.ld["keywords"]
-
 
 class TestMagazineArticle:
     """article-magazine → Article.  Fixture: ZTEST-MAGAZINE.md
