@@ -178,7 +178,7 @@ jobs:
         run: hugo --environment testing --destination tests/public_test
 
       - name: Install pytest
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml pytest-cov
 
       - name: Run content-integrity tests
         run: pytest tests/test_content_integrity.py -v --cov-report=term-missing
