@@ -181,7 +181,7 @@ jobs:
         run: pip install pytest pyyaml
 
       - name: Run content-integrity tests
-        run: pytest tests/test_content_integrity.py -v
+        run: pytest tests/test_content_integrity.py -v --cov-report=term-missing
 
       - name: Run JSON-LD tests
         run: pytest tests/test_bibliography_jsonld.py -v
