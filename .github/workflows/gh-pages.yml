@@ -247,7 +247,7 @@ jobs:
         run: hugo --cleanDestinationDir -e $HUGO_ENVIRONMENT
         
       - name: Install pytest
-        run: pip install pytest
+        run: pip install pytest pytest-cov
 
       - name: Run build-integrity tests
         run: pytest tests/test_hugo_build.py -v
