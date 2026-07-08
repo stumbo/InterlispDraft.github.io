@@ -5,140 +5,67 @@ Validates the JSON-LD structured data emitted by
 ``layouts/_partials/bibliography-json-ld.html`` for every Schema.org type
 used in the Interlisp bibliography.
 
-How it works
-------------
-Each ``ZTEST-*.md`` fixture in ``tests/fixtures/bibliography/`` is the
-**mock input**: it provides fully-controlled front-matter values that Hugo
-feeds into the template.  A test-environment Hugo build mounts those fixtures
-into the content tree without touching production content.  The tests then
-read the rendered ``tests/public_test/history/bibliography/<slug>/index.html``,
-extract the ``<script type="application/ld+json">`` block, and assert that the
-resulting JSON-LD object has the correct Schema.org ``@type`` and every
-type-specific field.
+Design
+------
+Each ``ZTEST-*.md`` file in ``tests/fixtures/bibliography/`` is the **mock
+input**: controlled Hugo front matter that the template converts to JSON-LD.
+The session-scoped ``hugo_build`` fixture (defined in ``conftest.py``) builds
+those fixtures into ``tests/public_test/`` via the ``--environment testing``
+Hugo configuration, which never touches production content.
 
-Fixture files (mock inputs)
----------------------------
-    tests/fixtures/bibliography/ZTEST-JOURNAL.md     -> article-journal
-    tests/fixtures/bibliography/ZTEST-MAGAZINE.md    -> article-magazine
-    tests/fixtures/bibliography/ZTEST-CONFERENCE.md  -> paper-conference
-    tests/fixtures/bibliography/ZTEST-BOOK.md        -> book
-    tests/fixtures/bibliography/ZTEST-CHAPTER.md     -> chapter
-    tests/fixtures/bibliography/ZTEST-REPORT.md      -> report
-    tests/fixtures/bibliography/ZTEST-THESIS.md      -> thesis
-    tests/fixtures/bibliography/ZTEST-PATENT.md      -> patent
-    tests/fixtures/bibliography/ZTEST-WEBPAGE.md     -> webpage
-    tests/fixtures/bibliography/ZTEST-BLOG.md        -> post-weblog
-    tests/fixtures/bibliography/ZTEST-VIDEO.md       -> motion_picture
-    tests/fixtures/bibliography/ZTEST-SOFTWARE.md    -> software
-    tests/fixtures/bibliography/ZTEST-ENCYCLOPEDIA.md -> entry-encyclopedia
-    tests/fixtures/bibliography/ZTEST-MESSAGE.md     -> personal_communication
-    tests/fixtures/bibliography/ZTEST-NO-URLS.md     -> (sameAs absent edge case)
+Each per-type test class declares an ``ld`` fixture that loads the parsed
+JSON-LD dict for that class's fixture slug.  Because ``_load_jsonld`` is
+wrapped with ``functools.lru_cache``, each HTML file is read exactly once per
+session regardless of how many tests reference it.
 
-Hugo build
-----------
-The session-scoped ``_hugo_build`` fixture runs:
+Cross-cutting invariants (context, language, date format, key isolation) are
+expressed as module-level parametrized functions so that pytest generates one
+test ID per slug or (slug, key) combination, making failures immediately
+identifiable.
 
-    hugo --environment testing --destination tests/public_test
-
-The ``config/testing/hugo.yaml`` environment mounts ``tests/fixtures/bibliography/``
-into the content tree via Hugo module mounts.  Test output lands in
-``tests/public_test/``, which is gitignored and never deployed.
-
-A rebuild is triggered automatically when any template or fixture file is
-newer than the most recent test output file.  Set the environment variable
-``PYTEST_FORCE_HUGO_BUILD=1`` to force a rebuild regardless.
-
-Prerequisites
--------------
-    pip install pytest    # only stdlib + pytest are required
+Fixture → Schema.org type map
+------------------------------
+    ZTEST-JOURNAL.md      article-journal       → ScholarlyArticle
+    ZTEST-MAGAZINE.md     article-magazine      → Article
+    ZTEST-CONFERENCE.md   paper-conference      → ScholarlyArticle
+    ZTEST-BOOK.md         book                  → Book
+    ZTEST-CHAPTER.md      chapter               → Chapter
+    ZTEST-REPORT.md       report                → Report
+    ZTEST-THESIS.md       thesis                → Thesis
+    ZTEST-PATENT.md       patent                → CreativeWork (+additionalType)
+    ZTEST-WEBPAGE.md      webpage               → WebPage
+    ZTEST-BLOG.md         post-weblog           → BlogPosting
+    ZTEST-VIDEO.md        motion_picture        → VideoObject
+    ZTEST-SOFTWARE.md     software              → SoftwareSourceCode
+    ZTEST-ENCYCLOPEDIA.md entry-encyclopedia    → Article
+    ZTEST-MESSAGE.md      personal_communication → Message
+    ZTEST-NO-URLS.md      report (no URLs)      → edge-case fixture
 
 Usage
 -----
     # From the repository root:
     pytest tests/test_bibliography_jsonld.py -v
 
-    # Force a fresh Hugo test build before running:
+    # Force a fresh Hugo test build first:
     PYTEST_FORCE_HUGO_BUILD=1 pytest tests/test_bibliography_jsonld.py -v
 """
 
 import functools
 import json
-import os
-import subprocess
 from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-
-REPO_ROOT = Path(__file__).parent.parent
-TEST_PUBLIC = REPO_ROOT / "tests" / "public_test"
-BIB_PUBLIC = TEST_PUBLIC / "history" / "bibliography"
-FIXTURES_DIR = REPO_ROOT / "tests" / "fixtures" / "bibliography"
-
-# Hugo lowercases the filename slug when generating URLs.
-FIXTURE_SLUGS = [
-    "ztest-journal",
-    "ztest-magazine",
-    "ztest-conference",
-    "ztest-book",
-    "ztest-chapter",
-    "ztest-report",
-    "ztest-thesis",
-    "ztest-patent",
-    "ztest-webpage",
-    "ztest-blog",
-    "ztest-video",
-    "ztest-software",
-    "ztest-encyclopedia",
-    "ztest-message",
-    "ztest-no-urls",
-]
-
+from conftest import BIB_PUBLIC, FIXTURE_SLUGS, TEST_PUBLIC
 
 # ---------------------------------------------------------------------------
-# Staleness check
-# ---------------------------------------------------------------------------
-
-def _needs_rebuild() -> bool:
-    """Return True when the test output is absent or older than any source file.
-
-    Source files watched: all Hugo templates, the test fixtures, and the
-    testing environment config.  Controlled by the ``PYTEST_FORCE_HUGO_BUILD``
-    environment variable (any non-empty value forces a rebuild).
-    """
-    if os.environ.get("PYTEST_FORCE_HUGO_BUILD"):
-        return True
-
-    html_files = list(BIB_PUBLIC.rglob("index.html"))
-    if not html_files:
-        return True
-
-    oldest_output = min(f.stat().st_mtime for f in html_files)
-
-    watched = [
-        REPO_ROOT / "layouts",
-        REPO_ROOT / "config" / "testing",
-        FIXTURES_DIR,
-    ]
-    for source in watched:
-        for path in source.rglob("*"):
-            if path.is_file() and path.stat().st_mtime > oldest_output:
-                return True
-
-    return False
-
-
-# ---------------------------------------------------------------------------
-# HTML helper – extract <script type="application/ld+json"> blocks
+# HTML extraction
 # ---------------------------------------------------------------------------
 
 
 class _JSONLDExtractor(HTMLParser):
-    """Pull raw text out of every ``application/ld+json`` script element."""
+    """Collect the raw text of every ``application/ld+json`` script element."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -161,24 +88,15 @@ class _JSONLDExtractor(HTMLParser):
             self._buf.append(data)
 
 
-@functools.lru_cache(maxsize=None)
-def _load_jsonld(slug: str) -> dict:
-    """Return the Schema.org JSON-LD dict from the built bibliography page *slug*.
+def _parse_jsonld(path: Path, *, type_filter: str | None = None) -> dict:
+    """Return the first Schema.org JSON-LD block from *path*.
 
-    Results are cached so each fixture HTML file is read and parsed exactly
-    once per test session regardless of how many test methods reference it.
+    If *type_filter* is given, return the block whose ``@type`` matches it
+    (used for the CollectionPage section index).  Otherwise return the first
+    block whose ``@context`` is ``https://schema.org``.
 
-    Skips (not fails) when the built page is absent; the session fixture
-    ``_hugo_build`` normally ensures the build runs before any test.
+    Raises a pytest failure (not an exception) if no matching block is found.
     """
-    path = BIB_PUBLIC / slug / "index.html"
-    if not path.exists():
-        pytest.skip(
-            f"Built page not found: {path}\n"
-            "Run 'hugo --environment testing --destination tests/public_test' "
-            "from the repo root, then re-run the tests."
-        )
-
     parser = _JSONLDExtractor()
     parser.feed(path.read_text(encoding="utf-8"))
 
@@ -187,49 +105,50 @@ def _load_jsonld(slug: str) -> dict:
             data = json.loads(raw.strip())
         except json.JSONDecodeError:
             continue
-        if isinstance(data, dict) and data.get("@context") == "https://schema.org":
+        if not isinstance(data, dict):
+            continue
+        if type_filter:
+            if data.get("@type") == type_filter:
+                return data
+        elif data.get("@context") == "https://schema.org":
             return data
 
-    pytest.fail(f"No schema.org JSON-LD block found in {path}")
+    pytest.fail(f"No matching JSON-LD block found in {path}")
 
 
 # ---------------------------------------------------------------------------
-# Session-scoped Hugo build
+# Cached page loaders
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _hugo_build() -> None:
-    """Build the Hugo test site once per pytest session when sources have changed.
+@functools.lru_cache(maxsize=None)
+def _load_jsonld(slug: str) -> dict:
+    """Return the Schema.org JSON-LD dict for the bibliography page *slug*.
 
-    Uses ``--environment testing`` which reads ``config/testing/hugo.yaml``,
-    mounting ``tests/fixtures/bibliography/`` into the content tree and
-    writing output to ``tests/public_test/``.
+    Results are cached (lru_cache) so each HTML file is read exactly once per
+    test session regardless of how many test methods reference the same slug.
 
-    Set ``PYTEST_FORCE_HUGO_BUILD=1`` to bypass the staleness check.
+    Skips (does not fail) when the built page is absent so that collection
+    errors clearly identify the missing file rather than producing confusing
+    assertion failures.
     """
-    if not _needs_rebuild():
-        return
-
-    result = subprocess.run(
-        [
-            "hugo",
-            "--environment", "testing",
-            "--destination", "tests/public_test",
-        ],
-        cwd=str(REPO_ROOT),
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        pytest.fail(
-            f"Hugo test build failed (exit {result.returncode}):\n"
-            f"--- stdout ---\n{result.stdout}\n"
-            f"--- stderr ---\n{result.stderr}"
+    path = BIB_PUBLIC / slug / "index.html"
+    if not path.exists():
+        pytest.skip(
+            f"Built page not found: {path}\n"
+            "Run 'hugo --environment testing --destination tests/public_test' "
+            "from the repo root, then re-run the tests."
         )
-    if result.stderr:
-        # Surface warnings without failing so they're visible in CI logs.
-        print(f"\n[hugo warnings]\n{result.stderr}", flush=True)
+    return _parse_jsonld(path)
+
+
+@functools.lru_cache(maxsize=1)
+def _load_jsonld_section() -> dict:
+    """Return the CollectionPage JSON-LD dict from the bibliography index page."""
+    path = TEST_PUBLIC / "history" / "bibliography" / "index.html"
+    if not path.exists():
+        pytest.skip(f"Section index page not found: {path}")
+    return _parse_jsonld(path, type_filter="CollectionPage")
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +157,7 @@ def _hugo_build() -> None:
 
 
 def _assert_base(ld: dict, expected_type: str, expected_name: str) -> None:
-    """Assert the fields present on every single-page bibliography entry."""
+    """Assert the fields that must appear on every single bibliography page."""
     assert ld.get("@context") == "https://schema.org", (
         f"@context must be 'https://schema.org', got {ld.get('@context')!r}"
     )
@@ -264,10 +183,10 @@ def _assert_person(
 ) -> None:
     """Assert a Schema.org Person object."""
     assert person.get("@type") == "Person", (
-        f"Person @type must be 'Person', got {person.get('@type')!r}"
+        f"@type must be 'Person', got {person.get('@type')!r}"
     )
     assert person.get("name") == expected_name, (
-        f"Person name must be {expected_name!r}, got {person.get('name')!r}"
+        f"name must be {expected_name!r}, got {person.get('name')!r}"
     )
     if family is not None:
         assert person.get("familyName") == family, (
@@ -282,582 +201,515 @@ def _assert_person(
 def _assert_org(obj: dict, expected_name: str) -> None:
     """Assert a Schema.org Organization object."""
     assert obj.get("@type") == "Organization", (
-        f"Expected Organization, got @type={obj.get('@type')!r}"
+        f"@type must be 'Organization', got {obj.get('@type')!r}"
     )
     assert obj.get("name") == expected_name, (
-        f"Organization name must be {expected_name!r}, got {obj.get('name')!r}"
+        f"name must be {expected_name!r}, got {obj.get('name')!r}"
     )
 
 
 # ===========================================================================
 # Per-type test classes
+#
+# Each class declares an ``ld`` fixture (autouse=True) that loads the JSON-LD
+# for that class's fixture page into ``self.ld``.  All test methods access the
+# data via ``self.ld`` rather than calling ``_load_jsonld`` independently,
+# making the data dependency explicit.  ``_load_jsonld`` is cached so the
+# fixture is effectively free after the first call.
 # ===========================================================================
 
 
 class TestScholarlyArticle:
-    """article-journal → ScholarlyArticle
+    """article-journal → ScholarlyArticle.  Fixture: ZTEST-JOURNAL.md
 
-    Mock fixture: ZTEST-JOURNAL.md
-    Authors: Smith, Alice J. | Jones, Bob
-    Journal: Journal of Test Science  vol 5, issue 2, pp 45-67
-    Concepts: Interlisp, ProgrammingLanguages  (tests about[] + keywords)
+    Also exercises author name splitting, sameAs ordering, periodical
+    isPartOf, and pagination fields.
     """
 
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-journal")["@type"] == "ScholarlyArticle"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-journal")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-journal"), "ScholarlyArticle", "Test Scholarly Article")
+        _assert_base(self.ld, "ScholarlyArticle", "Test Scholarly Article")
 
     def test_date_published(self):
-        assert _load_jsonld("ztest-journal")["datePublished"] == "2020-03-15"
+        assert self.ld["datePublished"] == "2020-03-15"
 
     def test_date_modified(self):
-        assert _load_jsonld("ztest-journal")["dateModified"] == "2023-01-10T00:00:00Z"
+        assert self.ld["dateModified"] == "2023-01-10T00:00:00Z"
 
     def test_description_from_abstract(self):
-        desc = _load_jsonld("ztest-journal").get("description", "")
-        assert "journal article" in desc.lower()
+        assert "journal article" in self.ld.get("description", "").lower()
 
     def test_authors_count_and_order(self):
-        authors = _load_jsonld("ztest-journal")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 2, f"Expected 2 authors, got {len(authors)}"
-        # "Smith, Alice J." → givenName=Alice J., familyName=Smith
+        # "Smith, Alice J." → familyName=Smith, givenName=Alice J.
         _assert_person(authors[0], "Alice J. Smith", family="Smith", given="Alice J.")
-        # "Jones, Bob" → givenName=Bob, familyName=Jones
+        # "Jones, Bob" → familyName=Jones, givenName=Bob
         _assert_person(authors[1], "Bob Jones", family="Jones", given="Bob")
 
     def test_same_as_contains_both_urls(self):
-        same_as = _load_jsonld("ztest-journal")["sameAs"]
+        same_as = self.ld["sameAs"]
         assert "https://example.com/journal-article" in same_as
         assert "https://www.zotero.org/groups/test/items/ZTESTJNL" in same_as
 
     def test_same_as_url_source_precedes_zotero(self):
         """url_source must appear before zotero_url in the sameAs array."""
-        same_as = _load_jsonld("ztest-journal")["sameAs"]
-        src_idx = same_as.index("https://example.com/journal-article")
-        zoo_idx = same_as.index("https://www.zotero.org/groups/test/items/ZTESTJNL")
-        assert src_idx < zoo_idx, "url_source should appear before zotero_url in sameAs"
+        same_as = self.ld["sameAs"]
+        assert same_as.index("https://example.com/journal-article") < same_as.index(
+            "https://www.zotero.org/groups/test/items/ZTESTJNL"
+        )
 
     def test_periodical_is_part_of(self):
-        is_part_of = _load_jsonld("ztest-journal")["isPartOf"]
+        is_part_of = self.ld["isPartOf"]
         assert is_part_of["@type"] == "Periodical"
         assert is_part_of["name"] == "Journal of Test Science"
 
     def test_volume_number(self):
-        assert _load_jsonld("ztest-journal")["volumeNumber"] == "5"
+        assert self.ld["volumeNumber"] == "5"
 
     def test_issue_number(self):
-        assert _load_jsonld("ztest-journal")["issueNumber"] == "2"
+        assert self.ld["issueNumber"] == "2"
 
     def test_pagination(self):
-        assert _load_jsonld("ztest-journal")["pagination"] == "45-67"
-
-    def test_about_defined_terms(self):
-        about = _load_jsonld("ztest-journal")["about"]
-        ids = [term["@id"] for term in about]
-        assert "https://interlisp.org/concepts/#Interlisp" in ids
-        assert "https://interlisp.org/concepts/#ProgrammingLanguages" in ids
-        for term in about:
-            assert term["@type"] == "DefinedTerm"
-            assert term["inDefinedTermSet"] == "https://interlisp.org/data/cs-concepts.jsonld"
-            assert "name" in term
-
-    def test_keywords_from_concepts(self):
-        keywords = _load_jsonld("ztest-journal")["keywords"]
-        assert "Interlisp" in keywords
-        assert "Programming Languages" in keywords
-
+        assert self.ld["pagination"] == "45-67"
 
 class TestMagazineArticle:
-    """article-magazine → Article
+    """article-magazine → Article.  Fixture: ZTEST-MAGAZINE.md
 
-    Mock fixture: ZTEST-MAGAZINE.md
-    Maps to Schema.org Article (not ScholarlyArticle).
-    Shares the same journal-style field block as article-journal.
+    Shares the periodical field block with article-journal but maps to
+    Schema.org Article rather than ScholarlyArticle.
     """
 
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-magazine")["@type"] == "Article"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-magazine")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-magazine"), "Article", "Test Magazine Article")
+        _assert_base(self.ld, "Article", "Test Magazine Article")
 
     def test_author(self):
-        authors = _load_jsonld("ztest-magazine")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Jane Doe", family="Doe", given="Jane")
 
     def test_periodical_is_part_of(self):
-        is_part_of = _load_jsonld("ztest-magazine")["isPartOf"]
+        is_part_of = self.ld["isPartOf"]
         assert is_part_of["@type"] == "Periodical"
         assert is_part_of["name"] == "Computing Monthly"
 
     def test_volume_issue_pagination(self):
-        ld = _load_jsonld("ztest-magazine")
-        assert ld["volumeNumber"] == "10"
-        assert ld["issueNumber"] == "6"
-        assert ld["pagination"] == "12-14"
+        assert self.ld["volumeNumber"] == "10"
+        assert self.ld["issueNumber"] == "6"
+        assert self.ld["pagination"] == "12-14"
 
 
 class TestConferencePaper:
-    """paper-conference → ScholarlyArticle
+    """paper-conference → ScholarlyArticle.  Fixture: ZTEST-CONFERENCE.md
 
-    Mock fixture: ZTEST-CONFERENCE.md
-    Uses proceedings_title (isPartOf Book), publisher, and place
-    (locationCreated Place).
+    Exercises proceedings isPartOf (Book), publisher, and locationCreated
+    (place field → Schema.org Place).
     """
 
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-conference")["@type"] == "ScholarlyArticle"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-conference")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-conference"), "ScholarlyArticle", "Test Conference Paper")
+        _assert_base(self.ld, "ScholarlyArticle", "Test Conference Paper")
 
     def test_proceedings_is_part_of(self):
-        is_part_of = _load_jsonld("ztest-conference")["isPartOf"]
+        is_part_of = self.ld["isPartOf"]
         assert is_part_of["@type"] == "Book"
         assert is_part_of["name"] == "Proceedings of the Test Conference 2019"
 
     def test_publisher(self):
-        _assert_org(_load_jsonld("ztest-conference")["publisher"], "ACM")
+        _assert_org(self.ld["publisher"], "ACM")
 
     def test_location_created(self):
-        """place front-matter field maps to locationCreated Place."""
-        location = _load_jsonld("ztest-conference")["locationCreated"]
+        """place front-matter maps to a Schema.org Place via locationCreated."""
+        location = self.ld["locationCreated"]
         assert location["@type"] == "Place"
         assert location["name"] == "San Francisco, CA"
 
     def test_authors_with_compound_given_name(self):
         """'Brown, Carol K.' splits to givenName='Carol K.', familyName='Brown'."""
-        authors = _load_jsonld("ztest-conference")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 2
         _assert_person(authors[0], "Carol K. Brown", family="Brown", given="Carol K.")
         _assert_person(authors[1], "David White", family="White", given="David")
 
 
 class TestBook:
-    """book → Book
+    """book → Book.  Fixture: ZTEST-BOOK.md"""
 
-    Mock fixture: ZTEST-BOOK.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-book")["@type"] == "Book"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-book")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-book"), "Book", "Test Book Title")
+        _assert_base(self.ld, "Book", "Test Book Title")
 
     def test_publisher(self):
-        _assert_org(_load_jsonld("ztest-book")["publisher"], "Test Publisher")
+        _assert_org(self.ld["publisher"], "Test Publisher")
 
     def test_author(self):
-        authors = _load_jsonld("ztest-book")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Author", family="Author", given="Test")
 
     def test_same_as_order(self):
-        """url_source must be the first element; zotero_url must be the second."""
-        same_as = _load_jsonld("ztest-book")["sameAs"]
+        """url_source must be the first element; zotero_url the second."""
+        same_as = self.ld["sameAs"]
         assert same_as[0] == "https://example.com/book"
         assert same_as[1] == "https://www.zotero.org/groups/test/items/ZTESTBOOK"
 
 
 class TestChapter:
-    """chapter → Chapter
+    """chapter → Chapter.  Fixture: ZTEST-CHAPTER.md
 
-    Mock fixture: ZTEST-CHAPTER.md
     isPartOf is a Book that also carries a nested publisher Organization.
     """
 
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-chapter")["@type"] == "Chapter"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-chapter")
+
+    def test_base_fields(self):
+        _assert_base(self.ld, "Chapter", "Test Chapter Title")
 
     def test_is_part_of_book(self):
-        parent = _load_jsonld("ztest-chapter")["isPartOf"]
+        parent = self.ld["isPartOf"]
         assert parent["@type"] == "Book"
         assert parent["name"] == "Test Book of Chapters"
 
     def test_parent_book_publisher(self):
-        """Publisher is nested inside the isPartOf Book object."""
-        parent = _load_jsonld("ztest-chapter")["isPartOf"]
-        _assert_org(parent["publisher"], "Chapter Publisher")
+        """publisher is nested inside the isPartOf Book, not at the top level."""
+        _assert_org(self.ld["isPartOf"]["publisher"], "Chapter Publisher")
 
     def test_pagination(self):
-        assert _load_jsonld("ztest-chapter")["pagination"] == "100-120"
+        assert self.ld["pagination"] == "100-120"
 
     def test_editor(self):
-        editors = _load_jsonld("ztest-chapter")["editor"]
+        editors = self.ld["editor"]
         assert len(editors) == 1
         _assert_person(editors[0], "Test Editor", family="Editor", given="Test")
 
     def test_author(self):
-        authors = _load_jsonld("ztest-chapter")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Writer", family="Writer", given="Test")
 
 
 class TestReport:
-    """report → Report
+    """report → Report.  Fixture: ZTEST-REPORT.md"""
 
-    Mock fixture: ZTEST-REPORT.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-report")["@type"] == "Report"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-report")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-report"), "Report", "Test Technical Report")
+        _assert_base(self.ld, "Report", "Test Technical Report")
 
     def test_publisher(self):
-        _assert_org(_load_jsonld("ztest-report")["publisher"], "Test Research Lab")
+        _assert_org(self.ld["publisher"], "Test Research Lab")
 
     def test_author(self):
-        authors = _load_jsonld("ztest-report")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Researcher", family="Researcher", given="Test")
 
 
 class TestThesis:
-    """thesis → Thesis
+    """thesis → Thesis.  Fixture: ZTEST-THESIS.md"""
 
-    Mock fixture: ZTEST-THESIS.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-thesis")["@type"] == "Thesis"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-thesis")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-thesis"), "Thesis", "Test Doctoral Thesis")
+        _assert_base(self.ld, "Thesis", "Test Doctoral Thesis")
 
     def test_source_organization(self):
-        org = _load_jsonld("ztest-thesis")["sourceOrganization"]
+        org = self.ld["sourceOrganization"]
         assert org["@type"] == "CollegeOrUniversity"
         assert org["name"] == "Test University"
 
     def test_author(self):
-        authors = _load_jsonld("ztest-thesis")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Student", family="Student", given="Test")
 
     def test_no_publisher_key(self):
-        """Theses use sourceOrganization, not publisher."""
-        assert "publisher" not in _load_jsonld("ztest-thesis"), (
-            "Thesis should use sourceOrganization, not publisher"
-        )
+        """Theses must use sourceOrganization, not publisher."""
+        assert "publisher" not in self.ld
 
 
 class TestPatent:
-    """patent → CreativeWork + additionalType "Patent"
+    """patent → CreativeWork + additionalType "Patent".  Fixture: ZTEST-PATENT.md
 
-    Mock fixture: ZTEST-PATENT.md
-    Verifies both PropertyValue identifier objects, copyrightHolder (assignee),
+    Verifies identifier PropertyValue objects, copyrightHolder (assignee),
     and validIn DefinedRegion (issuing authority).
     """
 
-    def test_schema_type_is_creative_work(self):
-        assert _load_jsonld("ztest-patent")["@type"] == "CreativeWork"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-patent")
+
+    def test_base_fields(self):
+        """Patent @type is CreativeWork; Patent identity comes from additionalType."""
+        _assert_base(self.ld, "CreativeWork", "Test Patent for Widget")
 
     def test_additional_type_is_patent(self):
-        assert _load_jsonld("ztest-patent")["additionalType"] == "Patent"
+        assert self.ld["additionalType"] == "Patent"
 
     def test_patent_number_identifier(self):
-        identifiers = _load_jsonld("ztest-patent")["identifier"]
         match = next(
-            (i for i in identifiers if i.get("propertyID") == "patent-number"), None
+            (i for i in self.ld["identifier"] if i.get("propertyID") == "patent-number"),
+            None,
         )
         assert match is not None, "No 'patent-number' identifier found"
         assert match["@type"] == "PropertyValue"
         assert match["value"] == "US9876543B2"
 
     def test_application_number_identifier(self):
-        identifiers = _load_jsonld("ztest-patent")["identifier"]
         match = next(
-            (i for i in identifiers if i.get("propertyID") == "application-number"), None
+            (i for i in self.ld["identifier"] if i.get("propertyID") == "application-number"),
+            None,
         )
         assert match is not None, "No 'application-number' identifier found"
         assert match["@type"] == "PropertyValue"
         assert match["value"] == "US12345678"
 
     def test_assignee_maps_to_copyright_holder(self):
-        """Patent assignee (rights owner) maps to copyrightHolder, not funder."""
-        holder = _load_jsonld("ztest-patent")["copyrightHolder"]
-        _assert_org(holder, "Test Corporation")
+        """Assignee (rights owner) maps to copyrightHolder, not funder."""
+        _assert_org(self.ld["copyrightHolder"], "Test Corporation")
 
     def test_issuing_authority_maps_to_valid_in(self):
         """Issuing authority (jurisdiction) maps to validIn DefinedRegion."""
-        region = _load_jsonld("ztest-patent")["validIn"]
+        region = self.ld["validIn"]
         assert region["@type"] == "DefinedRegion"
         assert region["name"] == "United States"
 
     def test_author(self):
-        authors = _load_jsonld("ztest-patent")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Inventor", family="Inventor", given="Test")
 
 
 class TestWebPage:
-    """webpage → WebPage
+    """webpage → WebPage.  Fixture: ZTEST-WEBPAGE.md"""
 
-    Mock fixture: ZTEST-WEBPAGE.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-webpage")["@type"] == "WebPage"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-webpage")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-webpage"), "WebPage", "Test Web Page")
+        _assert_base(self.ld, "WebPage", "Test Web Page")
 
     def test_is_part_of_website(self):
-        parent = _load_jsonld("ztest-webpage")["isPartOf"]
+        parent = self.ld["isPartOf"]
         assert parent["@type"] == "WebSite"
         assert parent["name"] == "Test Website"
 
 
 class TestBlogPosting:
-    """post-weblog → BlogPosting
+    """post-weblog → BlogPosting.  Fixture: ZTEST-BLOG.md"""
 
-    Mock fixture: ZTEST-BLOG.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-blog")["@type"] == "BlogPosting"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-blog")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-blog"), "BlogPosting", "Test Blog Post")
+        _assert_base(self.ld, "BlogPosting", "Test Blog Post")
 
     def test_is_part_of_blog(self):
-        parent = _load_jsonld("ztest-blog")["isPartOf"]
+        parent = self.ld["isPartOf"]
         assert parent["@type"] == "Blog"
         assert parent["name"] == "Test Tech Blog"
 
 
 class TestVideoObject:
-    """motion_picture → VideoObject
+    """motion_picture → VideoObject.  Fixture: ZTEST-VIDEO.md"""
 
-    Mock fixture: ZTEST-VIDEO.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-video")["@type"] == "VideoObject"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-video")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-video"), "VideoObject", "Test Motion Picture")
+        _assert_base(self.ld, "VideoObject", "Test Motion Picture")
 
     def test_production_company(self):
-        _assert_org(_load_jsonld("ztest-video")["productionCompany"], "Test Film Studio")
+        _assert_org(self.ld["productionCompany"], "Test Film Studio")
 
     def test_encoding_format(self):
-        assert _load_jsonld("ztest-video")["encodingFormat"] == "MP4"
+        assert self.ld["encodingFormat"] == "MP4"
 
     def test_part_of_series(self):
-        series = _load_jsonld("ztest-video")["partOfSeries"]
+        series = self.ld["partOfSeries"]
         assert series["@type"] == "CreativeWorkSeries"
         assert series["name"] == "Test Film Series"
 
 
 class TestSoftwareSourceCode:
-    """software → SoftwareSourceCode
+    """software → SoftwareSourceCode.  Fixture: ZTEST-SOFTWARE.md
 
-    Mock fixture: ZTEST-SOFTWARE.md
-    Also validates the single-name (no comma) author edge case via the
-    "Singularity" author entry, which has no family/given split.
+    Also exercises the single-name (no comma) author edge case via the
+    "Singularity" entry, which must produce only a ``name`` key.
     """
 
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-software")["@type"] == "SoftwareSourceCode"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-software")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-software"), "SoftwareSourceCode", "Test Software")
+        _assert_base(self.ld, "SoftwareSourceCode", "Test Software")
 
-    def test_two_author_objects_present(self):
-        assert len(_load_jsonld("ztest-software")["author"]) == 2
+    def test_author_count(self):
+        assert len(self.ld["author"]) == 2
 
     def test_author_with_comma_split(self):
-        """'Developer, Test' → givenName='Test', familyName='Developer'."""
-        authors = _load_jsonld("ztest-software")["author"]
-        _assert_person(authors[0], "Test Developer", family="Developer", given="Test")
+        """'Developer, Test' → familyName='Developer', givenName='Test'."""
+        _assert_person(self.ld["author"][0], "Test Developer", family="Developer", given="Test")
 
     def test_author_without_comma_has_only_name(self):
-        """'Singularity' (no comma) → only 'name' key, no familyName/givenName."""
-        authors = _load_jsonld("ztest-software")["author"]
-        single = next(
-            (a for a in authors if a["name"] == "Singularity"),
-            None,
-        )
+        """'Singularity' (no comma) → only 'name'; no familyName or givenName."""
+        single = next((a for a in self.ld["author"] if a["name"] == "Singularity"), None)
         assert single is not None, "'Singularity' author not found in author array"
         assert single["@type"] == "Person"
-        assert "familyName" not in single, (
-            "A name without a comma must not produce a familyName key"
-        )
-        assert "givenName" not in single, (
-            "A name without a comma must not produce a givenName key"
-        )
+        assert "familyName" not in single, "Single-name author must not have familyName"
+        assert "givenName" not in single, "Single-name author must not have givenName"
 
 
 class TestEncyclopediaEntry:
-    """entry-encyclopedia → Article with isPartOf Book
+    """entry-encyclopedia → Article + isPartOf Book.  Fixture: ZTEST-ENCYCLOPEDIA.md"""
 
-    Mock fixture: ZTEST-ENCYCLOPEDIA.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-encyclopedia")["@type"] == "Article"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-encyclopedia")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-encyclopedia"), "Article", "Test Encyclopedia Entry")
+        _assert_base(self.ld, "Article", "Test Encyclopedia Entry")
 
     def test_is_part_of_book(self):
-        """encyclopedia_title maps to isPartOf Book."""
-        parent = _load_jsonld("ztest-encyclopedia")["isPartOf"]
+        """encyclopedia_title maps to isPartOf with @type Book."""
+        parent = self.ld["isPartOf"]
         assert parent["@type"] == "Book"
         assert parent["name"] == "Encyclopedia of Test Computing"
 
 
 class TestPersonalCommunication:
-    """personal_communication → Message
+    """personal_communication → Message.  Fixture: ZTEST-MESSAGE.md"""
 
-    Mock fixture: ZTEST-MESSAGE.md
-    """
-
-    def test_schema_type(self):
-        assert _load_jsonld("ztest-message")["@type"] == "Message"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld("ztest-message")
 
     def test_base_fields(self):
-        _assert_base(_load_jsonld("ztest-message"), "Message", "Test Personal Communication")
+        _assert_base(self.ld, "Message", "Test Personal Communication")
 
     def test_author(self):
-        authors = _load_jsonld("ztest-message")["author"]
+        authors = self.ld["author"]
         assert len(authors) == 1
         _assert_person(authors[0], "Test Sender", family="Sender", given="Test")
 
 
-# ===========================================================================
-# Cross-cutting / edge-case tests
-# ===========================================================================
-
-
-class TestCommonFields:
-    """Shared field correctness and edge cases that span multiple types."""
-
-    def test_date_published_iso_format(self):
-        """datePublished is always YYYY-MM-DD regardless of input format."""
-        cases = [
-            ("ztest-journal", "2020-03-15"),
-            ("ztest-book", "1995-01-01"),
-            ("ztest-thesis", "2010-05-01"),
-        ]
-        for slug, expected in cases:
-            ld = _load_jsonld(slug)
-            assert ld.get("datePublished") == expected, (
-                f"{slug}: expected datePublished={expected!r}, "
-                f"got {ld.get('datePublished')!r}"
-            )
-
-    def test_date_modified_preserved_verbatim(self):
-        """dateModified is the raw lastmod string from front matter."""
-        assert _load_jsonld("ztest-report")["dateModified"] == "2023-04-01T00:00:00Z"
-
-    def test_description_from_abstract(self):
-        """The abstract front-matter field becomes the JSON-LD description."""
-        assert "test abstract for a book" in (
-            _load_jsonld("ztest-book").get("description", "").lower()
-        )
-
-    def test_in_language_always_en_us(self):
-        """Every bibliography page must carry inLanguage='en-US'."""
-        for slug in FIXTURE_SLUGS:
-            assert _load_jsonld(slug).get("inLanguage") == "en-US", (
-                f"{slug}: inLanguage must be 'en-US'"
-            )
-
-    def test_context_always_schema_org(self):
-        """Every bibliography page must declare @context='https://schema.org'."""
-        for slug in FIXTURE_SLUGS:
-            assert _load_jsonld(slug).get("@context") == "https://schema.org", (
-                f"{slug}: @context must be 'https://schema.org'"
-            )
-
-    def test_same_as_absent_when_no_urls(self):
-        """When neither url_source nor zotero_url is set, sameAs must be omitted."""
-        ld = _load_jsonld("ztest-no-urls")
-        assert "sameAs" not in ld, (
-            f"sameAs must not be present when no URLs are set, got {ld.get('sameAs')!r}"
-        )
-
-    def test_journal_keys_absent_from_non_journal_types(self):
-        """Journal-specific keys must not bleed into Book, Thesis, or Report pages."""
-        journal_keys = ("volumeNumber", "issueNumber", "pagination")
-        for slug in ("ztest-book", "ztest-thesis", "ztest-report"):
-            ld = _load_jsonld(slug)
-            for key in journal_keys:
-                assert key not in ld, (
-                    f"{slug} must not have journal key '{key}'"
-                )
-
-    def test_conference_keys_absent_from_journal(self):
-        """Conference-specific keys must not appear on journal article pages."""
-        ld = _load_jsonld("ztest-journal")
-        assert "locationCreated" not in ld, (
-            "locationCreated must not appear on journal article pages"
-        )
-
-
 class TestCollectionPage:
-    """The bibliography section page emits CollectionPage + ItemList JSON-LD."""
+    """The bibliography section index emits CollectionPage + ItemList JSON-LD."""
 
-    def test_schema_type(self):
-        ld = _load_jsonld_section()
-        assert ld["@type"] == "CollectionPage"
+    @pytest.fixture(autouse=True)
+    def ld(self):
+        self.ld = _load_jsonld_section()
 
-    def test_context(self):
-        assert _load_jsonld_section()["@context"] == "https://schema.org"
-
-    def test_in_language(self):
-        assert _load_jsonld_section()["inLanguage"] == "en-US"
+    def test_base_structure(self):
+        assert self.ld["@context"] == "https://schema.org"
+        assert self.ld["@type"] == "CollectionPage"
+        assert self.ld["inLanguage"] == "en-US"
 
     def test_main_entity_is_item_list(self):
-        main = _load_jsonld_section()["mainEntity"]
-        assert main["@type"] == "ItemList"
+        assert self.ld["mainEntity"]["@type"] == "ItemList"
 
-    def test_item_list_contains_fixture_entries(self):
-        """The ItemList must include at least the fixture pages."""
-        items = _load_jsonld_section()["mainEntity"]["itemListElement"]
-        urls = {item["url"] for item in items}
-        # Every fixture page should appear as a list item.
+    def test_item_list_contains_all_fixtures(self):
+        """Every fixture slug must appear in the ItemList URLs."""
+        urls = {item["url"] for item in self.ld["mainEntity"]["itemListElement"]}
         for slug in FIXTURE_SLUGS:
             assert any(slug in u for u in urls), (
                 f"ItemList missing entry for fixture slug '{slug}'"
             )
 
     def test_item_list_positions_are_sequential(self):
-        items = _load_jsonld_section()["mainEntity"]["itemListElement"]
-        positions = [item["position"] for item in items]
-        assert positions == list(range(1, len(items) + 1)), (
-            "ItemList positions must be consecutive integers starting at 1"
-        )
+        positions = [i["position"] for i in self.ld["mainEntity"]["itemListElement"]]
+        assert positions == list(range(1, len(positions) + 1))
 
     def test_number_of_items_matches_list_length(self):
-        main = _load_jsonld_section()["mainEntity"]
+        main = self.ld["mainEntity"]
         assert main["numberOfItems"] == len(main["itemListElement"])
 
 
-@functools.lru_cache(maxsize=1)
-def _load_jsonld_section() -> dict:
-    """Return the Schema.org JSON-LD dict from the bibliography section index page."""
-    path = TEST_PUBLIC / "history" / "bibliography" / "index.html"
-    if not path.exists():
-        pytest.skip(f"Section index not found: {path}")
+# ===========================================================================
+# Cross-cutting parametrized tests
+#
+# These tests validate invariants that must hold for every fixture or for
+# multiple (slug, key) combinations.  Using @pytest.mark.parametrize instead
+# of loops means pytest generates one test ID per case, so a failure
+# immediately identifies *which* slug or key combination broke — e.g.:
+#
+#   FAILED test_bibliography_jsonld.py::test_in_language_is_en_us[ztest-blog]
+#   FAILED test_bibliography_jsonld.py::test_journal_key_absent[ztest-book-volumeNumber]
+# ===========================================================================
 
-    parser = _JSONLDExtractor()
-    parser.feed(path.read_text(encoding="utf-8"))
 
-    for raw in parser.blocks:
-        try:
-            data = json.loads(raw.strip())
-        except json.JSONDecodeError:
-            continue
-        if isinstance(data, dict) and data.get("@type") == "CollectionPage":
-            return data
+@pytest.mark.parametrize("slug,expected_date", [
+    ("ztest-journal", "2020-03-15"),
+    ("ztest-book",    "1995-01-01"),
+    ("ztest-thesis",  "2010-05-01"),
+])
+def test_date_published_is_iso_format(slug: str, expected_date: str) -> None:
+    """datePublished is always YYYY-MM-DD regardless of front-matter input."""
+    assert _load_jsonld(slug)["datePublished"] == expected_date
 
-    pytest.fail(f"No CollectionPage JSON-LD block found in {path}")
+
+@pytest.mark.parametrize("slug", FIXTURE_SLUGS)
+def test_in_language_is_en_us(slug: str) -> None:
+    """Every bibliography page must carry inLanguage='en-US'."""
+    assert _load_jsonld(slug).get("inLanguage") == "en-US"
+
+
+@pytest.mark.parametrize("slug", FIXTURE_SLUGS)
+def test_context_is_schema_org(slug: str) -> None:
+    """Every bibliography page must declare @context='https://schema.org'."""
+    assert _load_jsonld(slug).get("@context") == "https://schema.org"
+
+
+@pytest.mark.parametrize("slug,key", [
+    (slug, key)
+    for slug in ("ztest-book", "ztest-thesis", "ztest-report")
+    for key in ("volumeNumber", "issueNumber", "pagination")
+])
+def test_journal_key_absent(slug: str, key: str) -> None:
+    """Journal pagination fields must not bleed into non-journal item types."""
+    assert key not in _load_jsonld(slug), (
+        f"{slug} must not have journal-specific key '{key}'"
+    )
+
+
+def test_same_as_absent_when_no_urls() -> None:
+    """sameAs is omitted when neither url_source nor zotero_url is set."""
+    assert "sameAs" not in _load_jsonld("ztest-no-urls")
+
+
+def test_date_modified_is_raw_lastmod() -> None:
+    """dateModified is stored verbatim as the lastmod front-matter value."""
+    assert _load_jsonld("ztest-report")["dateModified"] == "2023-04-01T00:00:00Z"
+
+
+def test_description_from_abstract() -> None:
+    """The abstract front-matter field becomes the JSON-LD description."""
+    assert "test abstract for a book" in _load_jsonld("ztest-book")["description"].lower()
+
+
+def test_conference_location_absent_from_journal() -> None:
+    """locationCreated is conference-specific and must not appear on journal pages."""
+    assert "locationCreated" not in _load_jsonld("ztest-journal")

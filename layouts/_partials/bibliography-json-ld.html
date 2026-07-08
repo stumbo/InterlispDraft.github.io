@@ -86,31 +86,6 @@
 {{- with .Params.url_source -}}{{- $sameAs = append (trim . " ") $sameAs -}}{{- end -}}
 {{- with .Params.zotero_url -}}{{- $sameAs = append (trim . " ") $sameAs -}}{{- end -}}
 
-{{- /* ── CS Concepts: about[] + keywords[] ────────────────────────────
-     Reads the `concepts:` list from front matter (list of concept IDs).
-     Looks each ID up in data/bibliography/concepts.json to get the name.
-     Emits schema:about (array of DefinedTerm) and schema:keywords (string).
-*/ -}}
-{{- $conceptData   := site.Data.bibliography.concepts -}}
-{{- $conceptIds    := .Params.concepts -}}
-{{- $aboutObjs     := slice -}}
-{{- $keywordNames  := slice -}}
-{{- if reflect.IsSlice $conceptIds -}}
-  {{- range $conceptIds -}}
-    {{- $id      := trim . " " -}}
-    {{- $concept := index $conceptData $id -}}
-    {{- if $concept -}}
-      {{- $aboutObjs    = append (dict
-            "@type"          "DefinedTerm"
-            "@id"            (printf "https://interlisp.org/concepts/#%s" $id)
-            "name"           $concept.name
-            "inDefinedTermSet" "https://interlisp.org/data/cs-concepts.jsonld"
-          ) $aboutObjs -}}
-      {{- $keywordNames = append $concept.name $keywordNames -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-
 {{- /* ── Base JSON-LD object (properties common to all types) ─────────── */ -}}
 {{- $ld := dict
   "@context"   "https://schema.org"
@@ -142,14 +117,6 @@
 
 {{- if gt (len $sameAs) 0 -}}
   {{- $ld = merge $ld (dict "sameAs" $sameAs) -}}
-{{- end -}}
-
-{{- if gt (len $aboutObjs) 0 -}}
-  {{- $ld = merge $ld (dict "about" $aboutObjs) -}}
-{{- end -}}
-
-{{- if gt (len $keywordNames) 0 -}}
-  {{- $ld = merge $ld (dict "keywords" (delimit $keywordNames ", ")) -}}
 {{- end -}}
 
 {{- /* ── Patent: additionalType + structured identifiers ──────────────── */ -}}

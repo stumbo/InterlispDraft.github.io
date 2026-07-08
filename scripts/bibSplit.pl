@@ -187,7 +187,6 @@ $abstract
 
 $extraFields
 tags:
-concepts:
 url_source: $urlSource
 zotero_url: "https://www.zotero.org/groups/2914042/items/$key"
 
