@@ -10,5 +10,5 @@ aliases:
  - /bibliography/
 
 ---
-Information on submitting new entries can be forund at [Interlisp Bibliography Submission](intake)  
+Information on submitting new entries can be found at [Interlisp Bibliography Submission](intake)  
 We generate this from our [Zotero collection library](https://www.zotero.org/groups/2914042/interlisp/library).
