@@ -20,7 +20,7 @@ Rather than in the case of a selective bibliography, in which only certain docum
 
 ### The Interlisp Bibliography’s Bibliographic Scope
 
-The Interlisp Bibliography aims to collect any and all works related to Interlisp and its various versions, including academic articles, reference manuals, software package documentation, advertisements, videos lectures or demonstrations, and other files and documentation so long as they discuss or relate to Interlisp, Interlisp’s development history (such as BBN-Lisp and Common Lisp items, as well as some LISP items), or applications built in Interlisp.
+The Interlisp Bibliography aims to collect any and all works related to Interlisp and its various versions, including academic articles, reference manuals, software package documentation, advertisements, video lectures or demonstrations, and other files and documentation so long as they discuss or relate to Interlisp, Interlisp’s development history (such as BBN-Lisp and Common Lisp items, as well as some LISP items), or applications built in Interlisp.
 
 If your item falls within this scope, then it likely belongs in the Interlisp Bibliography.
 
