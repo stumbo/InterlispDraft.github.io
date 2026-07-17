@@ -13,6 +13,7 @@ _site
 .sass-cache
 .jekyll-metadata
 public/
+tests/public_test/
 node_modules/
 _gen/
 .hugo_build.lock
@@ -25,3 +26,5 @@ static/data/bibItems/
 /scripts/*.err
 /content/en/history/bibliography/**
 !/content/en/history/bibliography/_index.md
+!/content/en/history/bibliography/intake/
+!/content/en/history/bibliography/intake/**
