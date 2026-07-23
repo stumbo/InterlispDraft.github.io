@@ -4,11 +4,10 @@ heading: Interlisp Bibliography
 type: bibliography
 cascade:
     type: bibliography
-    toc_hide: true
 weight: 5
 aliases:
  - /bibliography/
 
 ---
-Information on submitting new entries can be found at [Interlisp Bibliography Submission](intake)  
+The [Interlisp Bibliography Intake Guide](intake) explains how to recommend new bibliography items.  
 We generate this from our [Zotero collection library](https://www.zotero.org/groups/2914042/interlisp/library).
