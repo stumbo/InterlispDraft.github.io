@@ -190,6 +190,7 @@ zotero_url: "https://www.zotero.org/groups/2914042/items/$key"
 
 # Timestamp of last modification to bibliographic item
 lastmod: $dateModified
+toc_hide: true
 ---
 
 ENDITEM
